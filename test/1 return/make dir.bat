@@ -1,0 +1,6 @@
+mkdir ".\out"
+mkdir ".\out\CR"
+mkdir ".\out\CRLF"
+mkdir ".\out\LF"
+mkdir ".\out\TWOMIX"
+mkdir ".\out\TWOMIX_bite_shifted"

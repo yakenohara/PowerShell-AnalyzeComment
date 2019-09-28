@@ -1,0 +1,5 @@
+mkdir ".\out"
+mkdir ".\out\DOUBLEQUOTE"
+mkdir ".\out\DOUBLESLASH"
+mkdir ".\out\QUOTE"
+mkdir ".\out\SLASHASTER"
