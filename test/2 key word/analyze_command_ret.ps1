@@ -49,6 +49,8 @@ function func_read_file{
         #nothing to do
     }
 
+    # < $script_block_judger[0] 用 >  -------------------------------------------------------------------------------------------
+
     # `コード` -> ( `' 文字列` or `" 文字列` or `// コメント` or `/* */ コメント` )
     $script_block_in_code = {
 
@@ -183,24 +185,6 @@ function func_read_file{
         }
     }
 
-    # `// コメント` -> `コード`
-    $script_block_in_double_slash_comment = {
-
-        if ( ! $bool_escaped_return[0] ) { # エスケープされた改行ではない場合
-
-            # 字句解析した最後までをコード解析の区切りとする
-            $int_last_index_of_read_buffer_l1 = $int32_3darr_read_buffer.Count -1
-            func_slice_read_buffer ($int_last_index_of_read_buffer_l1) (0) ($int32_3darr_read_buffer[$int_last_index_of_read_buffer_l1][0].Count)
-            $writer2.Write("DOUBLE_SLASH_END")
-
-            $script_block_judger[0] = $script_block_in_code
-            $script_block_judger[1] = $script_block_dummy
-
-            continue # `※2 ループ終了判定の直前` へ
-
-        }
-    }
-
     # `/* */ コメント` -> `コード`
     $script_block_in_slash_aster_comment = {
 
@@ -221,6 +205,59 @@ function func_read_file{
             continue # `※2 ループ終了判定の直前` へ
         }
     }
+
+    # ------------------------------------------------------------------------------------------ </ $script_block_judger[0] 用 >  
+
+    # < $script_block_judger[1] 用 >  -------------------------------------------------------------------------------------------
+
+    # `// コメント` -> `コード`
+    $script_block_in_double_slash_comment = {
+
+        if ( ! $bool_escaped_return[0] ) { # エスケープされた改行ではない場合
+
+            $first_layer = $int32_3darr_read_buffer.Count -1
+            $scond_layer = 0
+            $third_layer = 0
+
+            if($int32arr_return_or_eof_read[0] -eq (-1)){ # EOF の場合
+
+                $scond_layer = 0
+
+            } else {  # 改行コードありの場合
+
+                $scond_layer = 1
+
+                # 改行コードを buffer に乗せるループ
+                for ($int_char_index_of_line = 0 ; $int_char_index_of_line -lt $int32arr_return_or_eof_read.Count ; $int_char_index_of_line++ ){
+                    
+                    $int32_3darr_read_buffer[$first_layer][$scond_layer].Add($int32arr_return_or_eof_read[$int_char_index_of_line])
+                    $int_added_index = $int32_3darr_read_buffer[$first_layer][$scond_layer].Count - 1
+                    $int_2darr_lex_history.Add( @($first_layer, $scond_layer, $int_added_index) ) | Out-Null
+
+                }
+            }
+
+            $third_layer = $int32_3darr_read_buffer[$first_layer][$scond_layer].Count
+
+            # 字句解析した最後までをコード解析の区切りとする
+            func_slice_read_buffer ($first_layer) ($scond_layer) ($third_layer)
+            $writer2.Write("DOUBLE_SLASH_END")
+
+            if($int32arr_return_or_eof_read[0] -eq (-1)){ # EOF の場合
+                break # EOF まで read() する loop から break
+            
+            } else{
+                $script_block_judger[0] = $script_block_in_code
+                $script_block_judger[1] = $script_block_dummy
+                continue # EOF まで read() する loop の先頭へ
+            }
+
+            
+
+        }
+    }
+
+    # ------------------------------------------------------------------------------------------ </ $script_block_judger[1] 用 > 
 
     # -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- </字句解析状態に応じた判定条件> 
 
@@ -360,6 +397,7 @@ function func_read_file{
                 $writer.Write($enc_s.GetString( $int32_3darr_read_buffer[0][$l2] ))
                 $writer2.Write($enc_s.GetString( $int32_3darr_read_buffer[0][$l2] ))
             }
+            $int32_3darr_read_buffer[0][$l2].Clear()
         }
 
         $int32arr_1st_of_sliced = (New-Object 'System.Collections.Generic.List[int32]')
