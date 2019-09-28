@@ -217,17 +217,40 @@ function func_read_file{
         function func_add_to_line_buffer($int_start_index, $int_last_idx){
     
             $int32arr_line = New-Object 'System.Collections.Generic.List[int32]'
+            $int32arr_return = New-Object 'System.Collections.Generic.List[int32]'
     
             if ( $int32arr_string_buffer.Count -gt ($int_start_index * (-1)) ){ # read() した 改行コード以外の文字列が存在する場合
-                $int32arr_line = $int32arr_string_buffer[0..($int32arr_string_buffer.Count + $int_start_index - 1)]
+
+                # 行 bytes の取得
+                $int_lp_1st_idx = 0
+                $int_lp_lat_idx = ($int32arr_string_buffer.Count + $int_start_index - 1)
+                for ($counter = $int_lp_1st_idx ; $counter -le $int_lp_lat_idx ; $counter++){
+                    $int32arr_line.Add($int32arr_string_buffer[$counter])
+                }
+            }
+
+            # 改行コードの取得
+            $int_lp_1st_idx = ($int32arr_string_buffer.Count + $int_start_index)
+            $int_lp_lat_idx = ($int32arr_string_buffer.Count + $int_last_idx)
+            for ($counter = $int_lp_1st_idx ; $counter -le $int_lp_lat_idx ; $counter++){
+                $int32arr_return.Add($int32arr_string_buffer[$counter])
             }
     
-            $int32arr_return = $int32arr_string_buffer[$int_start_index..$int_last_idx] # 改行コードの取得
             $int32_3darr_line_buffer.Add(@($int32arr_line, $int32arr_return)) | Out-Null
     
             if ($int_last_idx -lt (-1)){ # 最終 index が配列最後ではない場合
-                $int32arr_tmp = $int32arr_string_buffer[($int_last_idx + 1)..(-1)]
-                $int32arr_string_buffer.Clear()
+                
+                # string buffer 削除前 backup
+                $int32arr_tmp = New-Object 'System.Collections.Generic.List[int32]'
+                $int_lp_1st_idx = ($int32arr_string_buffer.Count + $int_last_idx)
+                $int_lp_lat_idx = ($int32arr_string_buffer.Count - 1)
+                for ($counter = $int_lp_1st_idx ; $counter -le $int_lp_lat_idx ; $counter++){
+                    $int32arr_tmp.Add($int32arr_string_buffer[$counter])
+                }
+
+                $int32arr_string_buffer.Clear() # string buffer 削除
+
+                # buckup した string buffer を格納
                 foreach ($byte_elem_of_tmp in $int32arr_tmp){
                     $int32arr_string_buffer.Add($byte_elem_of_tmp)
                 }
