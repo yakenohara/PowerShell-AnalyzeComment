@@ -242,7 +242,7 @@ function func_read_file{
                 
                 # string buffer 削除前 backup
                 $int32arr_tmp = New-Object 'System.Collections.Generic.List[int32]'
-                $int_lp_1st_idx = ($int32arr_string_buffer.Count + $int_last_idx)
+                $int_lp_1st_idx = ($int32arr_string_buffer.Count + $int_last_idx + 1)
                 $int_lp_lat_idx = ($int32arr_string_buffer.Count - 1)
                 for ($counter = $int_lp_1st_idx ; $counter -le $int_lp_lat_idx ; $counter++){
                     $int32arr_tmp.Add($int32arr_string_buffer[$counter])
