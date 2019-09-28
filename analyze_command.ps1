@@ -44,6 +44,11 @@ function func_read_file{
 
     # <字句解析状態に応じた判定条件> ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+    # なにもさせたくないときに指定する
+    $script_block_dummy = {
+        #nothing to do
+    }
+
     # `コード` -> ( `' 文字列` or `" 文字列` or `// コメント` or `/* */ コメント` )
     $script_block_in_code = {
 
@@ -63,6 +68,7 @@ function func_read_file{
                 $writer2.Write("QUOTE_START")
 
                 $script_block_judger[0] = $script_block_in_single_quote
+                $script_block_judger[1] = $script_block_dummy
 
                 continue # `※2 ループ終了判定の直前` へ
             }
@@ -84,13 +90,14 @@ function func_read_file{
                 $writer2.Write("DOUBLE_QUOTE_START")
 
                 $script_block_judger[0] = $script_block_in_double_quote
+                $script_block_judger[1] = $script_block_dummy
 
                 continue # `※2 ループ終了判定の直前` へ
             }
         }
 
         if ( # `//` の場合
-            ( $int_last_idx_of_lex_history -gt 1 ) -And
+            ( $int_last_idx_of_lex_history -gt 0 ) -And
             ( $int32_3darr_read_buffer[$int_2darr_lex_history[$int_last_idx_of_lex_history-1][0]][$int_2darr_lex_history[$int_last_idx_of_lex_history-1][1]][$int_2darr_lex_history[$int_last_idx_of_lex_history-1][2]] -eq $bytearr_doubleslath[0] ) -And
             ( $int32_3darr_read_buffer[$int_2darr_lex_history[$int_last_idx_of_lex_history][0]][$int_2darr_lex_history[$int_last_idx_of_lex_history][1]][$int_2darr_lex_history[$int_last_idx_of_lex_history][2]] -eq $bytearr_doubleslath[1] )
         ){
@@ -99,13 +106,14 @@ function func_read_file{
             func_slice_read_buffer ($int_2darr_lex_history[$int_last_idx_of_lex_history-1][0]) ($int_2darr_lex_history[$int_last_idx_of_lex_history-1][1]) ($int_2darr_lex_history[$int_last_idx_of_lex_history-1][2])
             $writer2.Write("DOUBLE_SLASH_START")
 
-            $script_block_judger[0] = $script_block_in_double_slash_comment
+            $script_block_judger[0] = $script_block_dummy
+            $script_block_judger[1] = $script_block_in_double_slash_comment
 
             continue # `※2 ループ終了判定の直前` へ
         }
 
         if ( # `/*` の場合
-            ( $int_last_idx_of_lex_history -gt 1 ) -And
+            ( $int_last_idx_of_lex_history -gt 0 ) -And
             ( $int32_3darr_read_buffer[$int_2darr_lex_history[$int_last_idx_of_lex_history-1][0]][$int_2darr_lex_history[$int_last_idx_of_lex_history-1][1]][$int_2darr_lex_history[$int_last_idx_of_lex_history-1][2]] -eq $bytearr_slashaster[0] ) -And
             ( $int32_3darr_read_buffer[$int_2darr_lex_history[$int_last_idx_of_lex_history][0]][$int_2darr_lex_history[$int_last_idx_of_lex_history][1]][$int_2darr_lex_history[$int_last_idx_of_lex_history][2]] -eq $bytearr_slashaster[1] )
         ){
@@ -115,6 +123,7 @@ function func_read_file{
             $writer2.Write("QUOTE_ASTER_START")
 
             $script_block_judger[0] = $script_block_in_slash_aster_comment
+            $script_block_judger[1] = $script_block_dummy
 
             continue # `※2 ループ終了判定の直前` へ
         }
@@ -140,6 +149,7 @@ function func_read_file{
                 $writer2.Write("QUOTE_END")
 
                 $script_block_judger[0] = $script_block_in_code
+                $script_block_judger[1] = $script_block_dummy
 
                 continue # `※2 ループ終了判定の直前` へ
             }
@@ -166,6 +176,7 @@ function func_read_file{
                 $writer2.Write("DOUBLE_QUOTE_END")
 
                 $script_block_judger[0] = $script_block_in_code
+                $script_block_judger[1] = $script_block_dummy
 
                 continue # `※2 ループ終了判定の直前` へ
             }
@@ -175,15 +186,15 @@ function func_read_file{
     # `// コメント` -> `コード`
     $script_block_in_double_slash_comment = {
 
-        if ( # <- 行の最後の byte の場合
-            ( $int_char_index_of_line -eq ($int32arr_line_read.Count-1) )
-        ){
+        if ( ! $bool_escaped_return[0] ) { # エスケープされた改行ではない場合
+
             # 字句解析した最後までをコード解析の区切りとする
             $int_last_index_of_read_buffer_l1 = $int32_3darr_read_buffer.Count -1
             func_slice_read_buffer ($int_last_index_of_read_buffer_l1) (0) ($int32_3darr_read_buffer[$int_last_index_of_read_buffer_l1][0].Count)
             $writer2.Write("DOUBLE_SLASH_END")
 
             $script_block_judger[0] = $script_block_in_code
+            $script_block_judger[1] = $script_block_dummy
 
             continue # `※2 ループ終了判定の直前` へ
 
@@ -194,7 +205,7 @@ function func_read_file{
     $script_block_in_slash_aster_comment = {
 
         if ( # `*/` の場合
-            ( $int_last_idx_of_lex_history -gt 1 ) -And
+            ( $int_last_idx_of_lex_history -gt 0 ) -And
             ( $int32_3darr_read_buffer[$int_2darr_lex_history[$int_last_idx_of_lex_history-1][0]][$int_2darr_lex_history[$int_last_idx_of_lex_history-1][1]][$int_2darr_lex_history[$int_last_idx_of_lex_history-1][2]] -eq $bytearr_asterslash[0] ) -And
             ( $int32_3darr_read_buffer[$int_2darr_lex_history[$int_last_idx_of_lex_history][0]][$int_2darr_lex_history[$int_last_idx_of_lex_history][1]][$int_2darr_lex_history[$int_last_idx_of_lex_history][2]] -eq $bytearr_asterslash[1] )
         ){
@@ -205,6 +216,7 @@ function func_read_file{
             $writer2.Write("QUOTE_ASTER_END")
 
             $script_block_judger[0] = $script_block_in_code
+            $script_block_judger[1] = $script_block_dummy
 
             continue # `※2 ループ終了判定の直前` へ
         }
@@ -378,7 +390,16 @@ function func_read_file{
     #    状態を変更するようにする
     # )
     $script_block_judger = New-Object System.Collections.ArrayList
-    $script_block_judger.Add($script_block_in_code) | Out-Null
+    $script_block_judger.Add($script_block_in_code) | Out-Null  # (行内用)
+    $script_block_judger.Add($script_block_dummy) | Out-Null    # (行末用)
+
+    # ( ※note
+    #    <字句解析状態に応じた判定条件> 内のスクリプトブロックから
+    #    状態を変更する必要があるので、配列定義にして index [0] に対してアクセス
+    #    状態を変更するようにする
+    # )
+    $bool_escaped_return = New-Object System.Collections.ArrayList
+    $bool_escaped_return.Add($false) | Out-Null
 
     # EOF まで read() する loop
     while($true){
@@ -396,7 +417,7 @@ function func_read_file{
         $int32_3darr_read_buffer[$int_last_index_of_read_buffer_l1].Add( (New-Object 'System.Collections.Generic.List[int32]') )  | Out-Null # 行文字列用
         $int32_3darr_read_buffer[$int_last_index_of_read_buffer_l1].Add( (New-Object 'System.Collections.Generic.List[int32]') )  | Out-Null # 改行 or EOF 格納用
         
-        $bool_escaped_return = $false
+        $bool_escaped_return[0] = $false
 
         #   |      ※0 initialize        |                     ※1 ループ終了判定                  |  ※2 ループ終了判定の直前   |
         for ($int_char_index_of_line = 0 ; $int_char_index_of_line -lt $int32arr_line_read.Count ; $int_char_index_of_line++ ){
@@ -410,18 +431,20 @@ function func_read_file{
                 ( $int32arr_line_read[$int_char_index_of_line] -eq $bytearr_backslash[0] ) -And # <- `\` の場合に TRUE
                 ( $int32arr_return_or_eof_read[0] -ne (-1) )                                    # <- 改行コードの場合に TRUE
             ){
-                $bool_escaped_return = $true
+                $bool_escaped_return[0] = $true
             
             } else { # 改行に対するエスケープではない場合
 
-                $bool_escaped_return = $false
+                $bool_escaped_return[0] = $false
 
                 $int_last_idx_of_lex_history = $int_2darr_lex_history.Add( @($int_last_index_of_read_buffer_l1, 0, $int_added_index) )
 
-                & $script_block_judger[0] # <字句解析状態に応じた判定条件>
+                & $script_block_judger[0] # <字句解析状態に応じた判定条件> (行内用)
 
             }
         }
+
+        & $script_block_judger[1] # <字句解析状態に応じた判定条件> (行末用)
 
         if($int32arr_return_or_eof_read[0] -eq (-1)){ # EOF の場合
 
@@ -439,7 +462,7 @@ function func_read_file{
             $int32_3darr_read_buffer[$int_last_index_of_read_buffer_l1][1].Add($int32arr_return_or_eof_read[$int_char_index_of_line])
             $int_added_index = $int32_3darr_read_buffer[$int_last_index_of_read_buffer_l1][1].Count - 1
 
-            if ( ! $bool_escaped_return ) { # エスケープされた改行ではない場合
+            if ( ! $bool_escaped_return[0] ) { # エスケープされた改行ではない場合
                 $int_last_idx_of_lex_history = $int_2darr_lex_history.Add( @($int_last_index_of_read_buffer_l1, 1, $int_added_index) )
             }
 
