@@ -569,10 +569,38 @@ $test_listener = {
 
             if ($int32_3darr_delimited_bytes[$l1][$l2].Count -gt 0){
                 $strstr = $enc_s.GetString($int32_3darr_delimited_bytes[$l1][$l2])
-                $sb.Append($strstr)
+                $sb.Append($strstr) | Out-Null
+            }
+
+            if ($l2 -eq 1){
+            
+                # $strstr = $enc_s.GetString($int32_3darr_delimited_bytes[$l1][$l2])
+
+                # if ( # CRLF の場合
+                #     ( $strstr -eq "`r`n")
+                # ){
+                #     $writer2.Write("CRLF`r`n")
+                #     Write-Host "CRLF"
+                
+                # } elseif ( # CR の場合
+                #     ( $strstr -eq "`r")
+                # ){
+                #     $writer2.Write("CR`r`n")
+                #     Write-Host "CR"
+                
+                # } elseif ( # LF の場合
+                #     ( $strstr -eq "`n")
+                # ){
+                #     $writer2.Write("LF`r`n")
+                #     Write-Host "LF"
+                # }
             }
         }
     }
+
+    # if($int_typ_flgs[0]){ # EOF の場合
+    #     $writer2.Write("EOF`r`n")
+    # }
 
     $writer.Write($sb)
 

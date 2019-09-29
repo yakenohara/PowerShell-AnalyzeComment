@@ -569,7 +569,7 @@ $test_listener = {
 
             if ($int32_3darr_delimited_bytes[$l1][$l2].Count -gt 0){
                 $strstr = $enc_s.GetString($int32_3darr_delimited_bytes[$l1][$l2])
-                $sb.Append($strstr)
+                $sb.Append($strstr) | Out-Null
             }
 
             if ($l2 -eq 1){
