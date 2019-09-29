@@ -16,23 +16,28 @@ $in = $Args[0]
 $out = $Args[2]
 $out2 = $Args[3]
 
-$enc_s = [Text.Encoding]::GetEncoding($str_enc_name)
 
+set-variable -name TYP_CLEAR -value 0x0 -option constant
 
-$reader = New-Object System.IO.FileStream($in, 3)
+set-variable -name TYP_CODE -value 0x1 -option constant
+set-variable -name TYP_CODE_QUOTE -value 0x3 -option constant
+set-variable -name TYP_CODE_DQUOTE -value 0x5 -option constant
 
-# 書き込み先ファイルオープン
-# https://docs.microsoft.com/ja-jp/dotnet/api/system.io.streamwriter.-ctor?view=netframework-4.8#System_IO_StreamWriter__ctor_System_String_System_Boolean_System_Text_Encoding_
-# utf-8 だと BOM が付加されてしまう
-$writer = New-Object System.IO.StreamWriter($out, $false, $enc_s)
-$writer2 = New-Object System.IO.StreamWriter($out2, $false, $enc_s)
+set-variable -name TYP_COMMENT -value 0x1 -option constant
+set-variable -name TYP_COMMENT_SINGLE -value 0x3 -option constant
+set-variable -name TYP_COMMENT_MULTI -value 0x5 -option constant
 
-function func_read_file{
+function func_read_file($delimition_listener){
 
     $int32arr_string_buffer = New-Object 'System.Collections.Generic.List[int32]'
     $int32_3darr_line_buffer = New-Object System.Collections.ArrayList
     $int32_3darr_read_buffer = New-Object System.Collections.ArrayList
     $int_2darr_lex_history = New-Object System.Collections.ArrayList
+
+    $int32_3darr_delimited_bytes = New-Object System.Collections.ArrayList
+    $int_typ_flgs = New-Object System.Collections.ArrayList
+    $int_typ_flgs.Add($TYP_CLEAR) | Out-Null # コード解析状態   -> [0]
+    $int_typ_flgs.Add($TYP_CLEAR) | Out-Null # コメント解析状態 -> [1]
     
     $bytearr_crlf = $enc_s.GetBytes("`r`n")
     $bytearr_backslash = $enc_s.GetBytes("\")
@@ -67,7 +72,8 @@ function func_read_file{
 
                 # last index of lexical analysis history の直前までをコード解析の区切りとする
                 func_slice_read_buffer ($int_2darr_lex_history[$int_last_idx_of_lex_history][0]) ($int_2darr_lex_history[$int_last_idx_of_lex_history][1]) ($int_2darr_lex_history[$int_last_idx_of_lex_history][2])
-                $writer2.Write("QUOTE_START")
+                $int_typ_flgs[0] = $TYP_CODE_QUOTE
+                $int_typ_flgs[1] = $TYP_CLEAR
 
                 $script_block_judger[0] = $script_block_in_single_quote
                 $script_block_judger[1] = $script_block_dummy
@@ -89,7 +95,8 @@ function func_read_file{
 
                 # last index of lexical analysis history の直前までをコード解析の区切りとする
                 func_slice_read_buffer ($int_2darr_lex_history[$int_last_idx_of_lex_history][0]) ($int_2darr_lex_history[$int_last_idx_of_lex_history][1]) ($int_2darr_lex_history[$int_last_idx_of_lex_history][2])
-                $writer2.Write("DOUBLE_QUOTE_START")
+                $int_typ_flgs[0] = $TYP_CODE_DQUOTE
+                $int_typ_flgs[1] = $TYP_CLEAR
 
                 $script_block_judger[0] = $script_block_in_double_quote
                 $script_block_judger[1] = $script_block_dummy
@@ -106,7 +113,8 @@ function func_read_file{
             
             # 2nd of last index of lexical analysis history の直前までをコード解析の区切りとする
             func_slice_read_buffer ($int_2darr_lex_history[$int_last_idx_of_lex_history-1][0]) ($int_2darr_lex_history[$int_last_idx_of_lex_history-1][1]) ($int_2darr_lex_history[$int_last_idx_of_lex_history-1][2])
-            $writer2.Write("DOUBLE_SLASH_START")
+            $int_typ_flgs[0] = $TYP_CLEAR
+            $int_typ_flgs[1] = $TYP_COMMENT_SINGLE
 
             $script_block_judger[0] = $script_block_dummy
             $script_block_judger[1] = $script_block_in_double_slash_comment
@@ -122,7 +130,8 @@ function func_read_file{
             
             # 2nd of last index of lexical analysis history の直前までをコード解析の区切りとする
             func_slice_read_buffer ($int_2darr_lex_history[$int_last_idx_of_lex_history-1][0]) ($int_2darr_lex_history[$int_last_idx_of_lex_history-1][1]) ($int_2darr_lex_history[$int_last_idx_of_lex_history-1][2])
-            $writer2.Write("SLASHASTER_START")
+            $int_typ_flgs[0] = $TYP_CLEAR
+            $int_typ_flgs[1] = $TYP_COMMENT_MULTI
 
             $script_block_judger[0] = $script_block_in_slash_aster_comment
             $script_block_judger[1] = $script_block_dummy
@@ -148,7 +157,8 @@ function func_read_file{
                 # 字句解析した最後までをコード解析の区切りとする
                 $int_last_index_of_read_buffer_l1 = $int32_3darr_read_buffer.Count -1
                 func_slice_read_buffer ($int_last_index_of_read_buffer_l1) (0) ($int32_3darr_read_buffer[$int_last_index_of_read_buffer_l1][0].Count)
-                $writer2.Write("QUOTE_END")
+                $int_typ_flgs[0] = $TYP_CODE
+                $int_typ_flgs[1] = $TYP_CLEAR
 
                 $script_block_judger[0] = $script_block_in_code
                 $script_block_judger[1] = $script_block_dummy
@@ -175,7 +185,8 @@ function func_read_file{
                 # 字句解析した最後までをコード解析の区切りとする
                 $int_last_index_of_read_buffer_l1 = $int32_3darr_read_buffer.Count -1
                 func_slice_read_buffer ($int_last_index_of_read_buffer_l1) (0) ($int32_3darr_read_buffer[$int_last_index_of_read_buffer_l1][0].Count)
-                $writer2.Write("DOUBLE_QUOTE_END")
+                $int_typ_flgs[0] = $TYP_CODE
+                $int_typ_flgs[1] = $TYP_CLEAR
 
                 $script_block_judger[0] = $script_block_in_code
                 $script_block_judger[1] = $script_block_dummy
@@ -197,7 +208,8 @@ function func_read_file{
             # 字句解析した最後までをコード解析の区切りとする
             $int_last_index_of_read_buffer_l1 = $int32_3darr_read_buffer.Count -1
             func_slice_read_buffer ($int_last_index_of_read_buffer_l1) (0) ($int32_3darr_read_buffer[$int_last_index_of_read_buffer_l1][0].Count)
-            $writer2.Write("SLASHASTER_END")
+            $int_typ_flgs[0] = $TYP_CODE
+            $int_typ_flgs[1] = $TYP_CLEAR
 
             $script_block_judger[0] = $script_block_in_code
             $script_block_judger[1] = $script_block_dummy
@@ -241,7 +253,8 @@ function func_read_file{
 
             # 字句解析した最後までをコード解析の区切りとする
             func_slice_read_buffer ($first_layer) ($scond_layer) ($third_layer)
-            $writer2.Write("DOUBLE_SLASH_END")
+            $int_typ_flgs[0] = $TYP_CODE
+            $int_typ_flgs[1] = $TYP_CLEAR
 
             if($int32arr_return_or_eof_read[0] -eq (-1)){ # EOF の場合
                 break # EOF まで read() する loop から break
@@ -251,9 +264,6 @@ function func_read_file{
                 $script_block_judger[1] = $script_block_dummy
                 continue # EOF まで read() する loop の先頭へ
             }
-
-            
-
         }
     }
 
@@ -381,25 +391,43 @@ function func_read_file{
 
     function func_slice_read_buffer($l1_to, $l2_to, $int_first_index_of_2nd){
 
+        $l2 = 0
+
+        $int32_3darr_delimited_bytes.Clear()
+
+        # 行定義の直前までコピーする loop
         for ($l1 = 0 ; $l1 -lt $l1_to ; $l1++){
+
+            $lstidx = $int32_3darr_delimited_bytes.Add( (New-Object System.Collections.ArrayList) )
+
+            $int32_3darr_delimited_bytes[$lstidx].Add( (New-Object 'System.Collections.Generic.List[int32]') ) | Out-Null
+            $int32_3darr_delimited_bytes[$lstidx].Add( (New-Object 'System.Collections.Generic.List[int32]') ) | Out-Null
 
             for ($l2 = 0 ; $l2 -lt 2 ; $l2++){
                 if( $int32_3darr_read_buffer[0][$l2].Count -gt 0){
-                    $writer.Write($enc_s.GetString( $int32_3darr_read_buffer[0][$l2] ))
-                    $writer2.Write($enc_s.GetString( $int32_3darr_read_buffer[0][$l2] ))
+
+                    for ($l3 = 0 ; $l3 -lt ($int32_3darr_read_buffer[0][$l2].Count) ; $l3++){
+                        $int32_3darr_delimited_bytes[$lstidx][$l2].Add( $int32_3darr_read_buffer[0][$l2][$l3] )
+                    }
                 }
             }
             $int32_3darr_read_buffer.RemoveAt(0)
         }
 
+        # 行定義の最後をコピーする loop
+        $lstidx = $int32_3darr_delimited_bytes.Add( (New-Object System.Collections.ArrayList) )
+        $int32_3darr_delimited_bytes[$lstidx].Add( (New-Object 'System.Collections.Generic.List[int32]') ) | Out-Null
+        $int32_3darr_delimited_bytes[$lstidx].Add( (New-Object 'System.Collections.Generic.List[int32]') ) | Out-Null
         for ($l2 = 0 ; $l2 -lt $l2_to ; $l2++){
             if( $int32_3darr_read_buffer[0][$l2].Count -gt 0){
-                $writer.Write($enc_s.GetString( $int32_3darr_read_buffer[0][$l2] ))
-                $writer2.Write($enc_s.GetString( $int32_3darr_read_buffer[0][$l2] ))
+                for ($l3 = 0 ; $l3 -lt ($int32_3darr_read_buffer[0][$l2].Count) ; $l3++){
+                    $int32_3darr_delimited_bytes[$lstidx][$l2].Add( $int32_3darr_read_buffer[0][$l2][$l3] )
+                }
             }
             $int32_3darr_read_buffer[0][$l2].Clear()
         }
 
+        # 行定義のスライス対象要素を スライス
         $int32arr_1st_of_sliced = (New-Object 'System.Collections.Generic.List[int32]')
         $int32arr_2nd_of_sliced = (New-Object 'System.Collections.Generic.List[int32]')
 
@@ -411,14 +439,17 @@ function func_read_file{
             $int32arr_2nd_of_sliced.Add($int32_3darr_read_buffer[0][$l2][$yyy])
         }
 
+        # スライスした 前半を コピー
         if ($int32arr_1st_of_sliced.Count -gt 0){
-            $writer.Write($enc_s.GetString( $int32arr_1st_of_sliced ))
-            $writer2.Write($enc_s.GetString( $int32arr_1st_of_sliced ))
+            $int32_3darr_delimited_bytes[$lstidx][$l2] = $int32arr_1st_of_sliced
         }
 
+        # スライスした 後半を buffer に貯め直し
         $int32_3darr_read_buffer[0][$l2_to] = $int32arr_2nd_of_sliced
 
-        $int_2darr_lex_history.Clear()
+        $int_2darr_lex_history.Clear() # 字句解析履歴をクリア
+
+        & $script_delimition_listerner[0] # listener call
     }
 
     # 字句解析状態を `コード中` に設定
@@ -438,6 +469,12 @@ function func_read_file{
     # )
     $bool_escaped_return = New-Object System.Collections.ArrayList
     $bool_escaped_return.Add($false) | Out-Null
+
+    $script_delimition_listerner = New-Object System.Collections.ArrayList
+    $script_delimition_listerner.Add($delimition_listener) | Out-Null
+
+    $int_typ_flgs[0] = $TYP_CLEAR
+    $int_typ_flgs[1] = $TYP_CLEAR
 
     # EOF まで read() する loop
     while($true){
@@ -508,7 +545,66 @@ function func_read_file{
     }
 }
 
-func_read_file
+$enc_s = [Text.Encoding]::GetEncoding($str_enc_name)
+$reader = New-Object System.IO.FileStream($in, 3)
+$writer = New-Object System.IO.StreamWriter($out, $false, $enc_s)
+$writer2 = New-Object System.IO.StreamWriter($out2, $false, $enc_s)
+
+$test_listener = {
+
+    #Write-Host "listned"
+    
+    $sb=New-Object System.Text.StringBuilder
+
+    for ($l1 = 0 ; $l1 -lt $int32_3darr_delimited_bytes.Count ; $l1++){
+
+        for ($l2 = 0 ; $l2 -lt $int32_3darr_delimited_bytes[$l1].Count ; $l2++){
+
+            if ($int32_3darr_delimited_bytes[$l1][$l2].Count -gt 0){
+                $strstr = $enc_s.GetString($int32_3darr_delimited_bytes[$l1][$l2])
+                $sb.Append($strstr)
+            }
+        }
+    }
+
+    # Write-Host '$int_typ_flgs[0]:' ([string]$int_typ_flgs[0])
+    # Write-Host '$int_typ_flgs[1]' ([string]$int_typ_flgs[1])
+
+    if ( ($int_typ_flgs[0] -bor 1 ) -ne 0 ){ # コード解析中の場合
+
+        if ($int_typ_flgs[0] -eq $TYP_CODE_QUOTE){ # `'` 中の場合
+            $writer2.Write("QUOTE_START")
+            $writer2.Write($sb)
+            $writer2.Write("QUOTE_END")
+
+        } elseif ($int_typ_flgs[0] -eq $TYP_CODE_DQUOTE) { # `"` 中の場合
+            $writer2.Write("DOUBLE_QUOTE_START")
+            $writer2.Write($sb)
+            $writer2.Write("DOUBLE_QUOTE_END")
+        } else {
+            $writer2.Write($sb)
+        }
+
+    } else { # コメント解析中の場合
+
+        if ($int_typ_flgs[1] -eq $TYP_COMMENT_SINGLE){ # `'` 中の場合
+            $writer2.Write("DOUBLE_SLASH_START")
+            $writer2.Write($sb)
+            $writer2.Write("DOUBLE_SLASH_END")
+
+        } elseif ($int_typ_flgs[1] -eq $TYP_COMMENT_MULTI) { # `"` 中の場合
+            $writer2.Write("SLASHASTER_START")
+            $writer2.Write($sb)
+            $writer2.Write("SLASHASTER_END")
+        } else {
+            $writer2.Write("UNKOWN")
+            $writer2.Write($sb)
+            $writer2.Write("UNKOWN_END")
+        }
+    }
+}
+
+func_read_file ($test_listener)
 
 # ファイルクローズ
 $reader.Close()
