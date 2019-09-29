@@ -122,7 +122,7 @@ function func_read_file{
             
             # 2nd of last index of lexical analysis history の直前までをコード解析の区切りとする
             func_slice_read_buffer ($int_2darr_lex_history[$int_last_idx_of_lex_history-1][0]) ($int_2darr_lex_history[$int_last_idx_of_lex_history-1][1]) ($int_2darr_lex_history[$int_last_idx_of_lex_history-1][2])
-            $writer2.Write("QUOTE_ASTER_START")
+            $writer2.Write("SLASHASTER_START")
 
             $script_block_judger[0] = $script_block_in_slash_aster_comment
             $script_block_judger[1] = $script_block_dummy
@@ -197,7 +197,7 @@ function func_read_file{
             # 字句解析した最後までをコード解析の区切りとする
             $int_last_index_of_read_buffer_l1 = $int32_3darr_read_buffer.Count -1
             func_slice_read_buffer ($int_last_index_of_read_buffer_l1) (0) ($int32_3darr_read_buffer[$int_last_index_of_read_buffer_l1][0].Count)
-            $writer2.Write("QUOTE_ASTER_END")
+            $writer2.Write("SLASHASTER_END")
 
             $script_block_judger[0] = $script_block_in_code
             $script_block_judger[1] = $script_block_dummy
