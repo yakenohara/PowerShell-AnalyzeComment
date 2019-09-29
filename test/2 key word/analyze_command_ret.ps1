@@ -36,8 +36,10 @@ function func_read_file($delimition_listener){
 
     $int32_3darr_delimited_bytes = New-Object System.Collections.ArrayList
     $int_typ_flgs = New-Object System.Collections.ArrayList
-    $int_typ_flgs.Add($TYP_CLEAR) | Out-Null # コード解析状態   -> [0]
-    $int_typ_flgs.Add($TYP_CLEAR) | Out-Null # コメント解析状態 -> [1]
+    $int_typ_flgs.Add($false) | Out-Null     # EOFかどうか -> [0]
+    $int_typ_flgs.Add($TYP_CLEAR) | Out-Null # コード解析状態   -> [1]
+    $int_typ_flgs.Add($TYP_CLEAR) | Out-Null # コメント解析状態 -> [2]
+    
     
     $bytearr_crlf = $enc_s.GetBytes("`r`n")
     $bytearr_backslash = $enc_s.GetBytes("\")
@@ -72,8 +74,8 @@ function func_read_file($delimition_listener){
 
                 # last index of lexical analysis history の直前までをコード解析の区切りとする
                 func_slice_read_buffer ($int_2darr_lex_history[$int_last_idx_of_lex_history][0]) ($int_2darr_lex_history[$int_last_idx_of_lex_history][1]) ($int_2darr_lex_history[$int_last_idx_of_lex_history][2])
-                $int_typ_flgs[0] = $TYP_CODE_QUOTE
-                $int_typ_flgs[1] = $TYP_CLEAR
+                $int_typ_flgs[1] = $TYP_CODE_QUOTE
+                $int_typ_flgs[2] = $TYP_CLEAR
 
                 $script_block_judger[0] = $script_block_in_single_quote
                 $script_block_judger[1] = $script_block_dummy
@@ -95,8 +97,8 @@ function func_read_file($delimition_listener){
 
                 # last index of lexical analysis history の直前までをコード解析の区切りとする
                 func_slice_read_buffer ($int_2darr_lex_history[$int_last_idx_of_lex_history][0]) ($int_2darr_lex_history[$int_last_idx_of_lex_history][1]) ($int_2darr_lex_history[$int_last_idx_of_lex_history][2])
-                $int_typ_flgs[0] = $TYP_CODE_DQUOTE
-                $int_typ_flgs[1] = $TYP_CLEAR
+                $int_typ_flgs[1] = $TYP_CODE_DQUOTE
+                $int_typ_flgs[2] = $TYP_CLEAR
 
                 $script_block_judger[0] = $script_block_in_double_quote
                 $script_block_judger[1] = $script_block_dummy
@@ -113,8 +115,8 @@ function func_read_file($delimition_listener){
             
             # 2nd of last index of lexical analysis history の直前までをコード解析の区切りとする
             func_slice_read_buffer ($int_2darr_lex_history[$int_last_idx_of_lex_history-1][0]) ($int_2darr_lex_history[$int_last_idx_of_lex_history-1][1]) ($int_2darr_lex_history[$int_last_idx_of_lex_history-1][2])
-            $int_typ_flgs[0] = $TYP_CLEAR
-            $int_typ_flgs[1] = $TYP_COMMENT_SINGLE
+            $int_typ_flgs[1] = $TYP_CLEAR
+            $int_typ_flgs[2] = $TYP_COMMENT_SINGLE
 
             $script_block_judger[0] = $script_block_dummy
             $script_block_judger[1] = $script_block_in_double_slash_comment
@@ -130,8 +132,8 @@ function func_read_file($delimition_listener){
             
             # 2nd of last index of lexical analysis history の直前までをコード解析の区切りとする
             func_slice_read_buffer ($int_2darr_lex_history[$int_last_idx_of_lex_history-1][0]) ($int_2darr_lex_history[$int_last_idx_of_lex_history-1][1]) ($int_2darr_lex_history[$int_last_idx_of_lex_history-1][2])
-            $int_typ_flgs[0] = $TYP_CLEAR
-            $int_typ_flgs[1] = $TYP_COMMENT_MULTI
+            $int_typ_flgs[1] = $TYP_CLEAR
+            $int_typ_flgs[2] = $TYP_COMMENT_MULTI
 
             $script_block_judger[0] = $script_block_in_slash_aster_comment
             $script_block_judger[1] = $script_block_dummy
@@ -157,8 +159,8 @@ function func_read_file($delimition_listener){
                 # 字句解析した最後までをコード解析の区切りとする
                 $int_last_index_of_read_buffer_l1 = $int32_3darr_read_buffer.Count -1
                 func_slice_read_buffer ($int_last_index_of_read_buffer_l1) (0) ($int32_3darr_read_buffer[$int_last_index_of_read_buffer_l1][0].Count)
-                $int_typ_flgs[0] = $TYP_CODE
-                $int_typ_flgs[1] = $TYP_CLEAR
+                $int_typ_flgs[1] = $TYP_CODE
+                $int_typ_flgs[2] = $TYP_CLEAR
 
                 $script_block_judger[0] = $script_block_in_code
                 $script_block_judger[1] = $script_block_dummy
@@ -185,8 +187,8 @@ function func_read_file($delimition_listener){
                 # 字句解析した最後までをコード解析の区切りとする
                 $int_last_index_of_read_buffer_l1 = $int32_3darr_read_buffer.Count -1
                 func_slice_read_buffer ($int_last_index_of_read_buffer_l1) (0) ($int32_3darr_read_buffer[$int_last_index_of_read_buffer_l1][0].Count)
-                $int_typ_flgs[0] = $TYP_CODE
-                $int_typ_flgs[1] = $TYP_CLEAR
+                $int_typ_flgs[1] = $TYP_CODE
+                $int_typ_flgs[2] = $TYP_CLEAR
 
                 $script_block_judger[0] = $script_block_in_code
                 $script_block_judger[1] = $script_block_dummy
@@ -208,8 +210,8 @@ function func_read_file($delimition_listener){
             # 字句解析した最後までをコード解析の区切りとする
             $int_last_index_of_read_buffer_l1 = $int32_3darr_read_buffer.Count -1
             func_slice_read_buffer ($int_last_index_of_read_buffer_l1) (0) ($int32_3darr_read_buffer[$int_last_index_of_read_buffer_l1][0].Count)
-            $int_typ_flgs[0] = $TYP_CODE
-            $int_typ_flgs[1] = $TYP_CLEAR
+            $int_typ_flgs[1] = $TYP_CODE
+            $int_typ_flgs[2] = $TYP_CLEAR
 
             $script_block_judger[0] = $script_block_in_code
             $script_block_judger[1] = $script_block_dummy
@@ -234,6 +236,7 @@ function func_read_file($delimition_listener){
             if($int32arr_return_or_eof_read[0] -eq (-1)){ # EOF の場合
 
                 $scond_layer = 0
+                $int_typ_flgs[0] = $true
 
             } else {  # 改行コードありの場合
 
@@ -253,8 +256,8 @@ function func_read_file($delimition_listener){
 
             # 字句解析した最後までをコード解析の区切りとする
             func_slice_read_buffer ($first_layer) ($scond_layer) ($third_layer)
-            $int_typ_flgs[0] = $TYP_CODE
-            $int_typ_flgs[1] = $TYP_CLEAR
+            $int_typ_flgs[1] = $TYP_CODE
+            $int_typ_flgs[2] = $TYP_CLEAR
 
             if($int32arr_return_or_eof_read[0] -eq (-1)){ # EOF の場合
                 break # EOF まで read() する loop から break
@@ -473,8 +476,10 @@ function func_read_file($delimition_listener){
     $script_delimition_listerner = New-Object System.Collections.ArrayList
     $script_delimition_listerner.Add($delimition_listener) | Out-Null
 
-    $int_typ_flgs[0] = $TYP_CLEAR
-    $int_typ_flgs[1] = $TYP_CLEAR
+    # コード解析中 状態に設定
+    $int_typ_flgs[0] = $false
+    $int_typ_flgs[1] = $TYP_CODE
+    $int_typ_flgs[2] = $TYP_CLEAR
 
     # EOF まで read() する loop
     while($true){
@@ -523,6 +528,8 @@ function func_read_file($delimition_listener){
 
         if($int32arr_return_or_eof_read[0] -eq (-1)){ # EOF の場合
 
+            $int_typ_flgs[0] = $true
+
             # 字句解析した最後までをコード解析の区切りとする
             $int_last_index_of_read_buffer_l1 = $int32_3darr_read_buffer.Count -1
             func_slice_read_buffer ($int_last_index_of_read_buffer_l1) (0) ($int32_3darr_read_buffer[$int_last_index_of_read_buffer_l1][0].Count)
@@ -567,39 +574,50 @@ $test_listener = {
         }
     }
 
+    $writer.Write($sb)
+
     # Write-Host '$int_typ_flgs[0]:' ([string]$int_typ_flgs[0])
-    # Write-Host '$int_typ_flgs[1]' ([string]$int_typ_flgs[1])
+    # Write-Host '$int_typ_flgs[1]:' ([string]$int_typ_flgs[1])
+    # Write-Host '$int_typ_flgs[2]' ([string]$int_typ_flgs[2])
 
-    if ( ($int_typ_flgs[0] -bor 1 ) -ne 0 ){ # コード解析中の場合
+    if ( ($int_typ_flgs[1] -band (1) ) -eq 1 ){ # コード解析中の場合
 
-        if ($int_typ_flgs[0] -eq $TYP_CODE_QUOTE){ # `'` 中の場合
+        if ($int_typ_flgs[1] -eq $TYP_CODE_QUOTE){ # `'` 中の場合
             $writer2.Write("QUOTE_START")
             $writer2.Write($sb)
-            $writer2.Write("QUOTE_END")
+            if(!$int_typ_flgs[0]){
+                $writer2.Write("QUOTE_END")
+            }
 
-        } elseif ($int_typ_flgs[0] -eq $TYP_CODE_DQUOTE) { # `"` 中の場合
+        } elseif ($int_typ_flgs[1] -eq $TYP_CODE_DQUOTE) { # `"` 中の場合
             $writer2.Write("DOUBLE_QUOTE_START")
             $writer2.Write($sb)
-            $writer2.Write("DOUBLE_QUOTE_END")
+            if(!$int_typ_flgs[0]){
+                $writer2.Write("DOUBLE_QUOTE_END")
+            }
         } else {
             $writer2.Write($sb)
         }
 
     } else { # コメント解析中の場合
 
-        if ($int_typ_flgs[1] -eq $TYP_COMMENT_SINGLE){ # `'` 中の場合
+        if ($int_typ_flgs[2] -eq $TYP_COMMENT_SINGLE){ # `'` 中の場合
             $writer2.Write("DOUBLE_SLASH_START")
             $writer2.Write($sb)
             $writer2.Write("DOUBLE_SLASH_END")
 
-        } elseif ($int_typ_flgs[1] -eq $TYP_COMMENT_MULTI) { # `"` 中の場合
+        } elseif ($int_typ_flgs[2] -eq $TYP_COMMENT_MULTI) { # `"` 中の場合
             $writer2.Write("SLASHASTER_START")
             $writer2.Write($sb)
-            $writer2.Write("SLASHASTER_END")
+            if(!$int_typ_flgs[0]){
+                $writer2.Write("SLASHASTER_END")
+            }
         } else {
             $writer2.Write("UNKOWN")
             $writer2.Write($sb)
-            $writer2.Write("UNKOWN_END")
+            if(!$int_typ_flgs[0]){
+                $writer2.Write("UNKOWN_END")
+            }
         }
     }
 }
