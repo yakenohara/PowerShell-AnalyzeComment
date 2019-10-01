@@ -1,21 +1,19 @@
-# <実行方法> ------------------------------------------------------------------------------------------
 
-# ./<このスクリプトファイル>.ps1 " arg1, arg2, arg3, arg4
 
-# ↓ フルパスで指定する ↓  
-# arg1 <- "C:\\~~\\comment2\\0.c" (解析対象ファイル)
-# arg2 <- ダミー。なんでもいい
-# arg2 <- "C:\\~~\\comment2\\0.c" (解析対象ファイルをコピーするファイル。 1 byte も誤りなく コピーできているかどうかを確認するために指定する)
-# arg4 <- "C:\\~~\\comment2\\0.c" (解析対象ファイルを解析後の出力するファイル。 )
-
-# ----------------------------------------------------------------------------------------- </実行方法> 
-
-$str_enc_name = "shift-jis"
-
-$in = $Args[0]
-$out = $Args[2]
-$out2 = $Args[3]
-
+# To see the list of supported code pages instantly,
+# execute the following powershell script.
+# ```
+# &{
+#     for($cnt = 0; $cnt -lt 65535; $cnt++){
+#         try{
+#             $enc = [Text.Encoding]::GetEncoding($cnt)
+#             $web_name = $enc.WebName
+#             $enc_name = $enc.EncodingName
+#             Write-Host "$cnt, $web_name, $enc_name"
+#         } catch {}
+#     }
+# }
+# ```
 
 set-variable -name TYP_CLEAR -value 0x0 -option constant
 
@@ -27,7 +25,7 @@ set-variable -name TYP_COMMENT -value 0x1 -option constant
 set-variable -name TYP_COMMENT_SINGLE -value 0x3 -option constant
 set-variable -name TYP_COMMENT_MULTI -value 0x5 -option constant
 
-function func_read_file($delimition_listener){
+function func_read_file($filepath, $encoding, $delimition_listener){
 
     $int32arr_string_buffer = New-Object 'System.Collections.Generic.List[int32]'
     $int32_3darr_line_buffer = New-Object System.Collections.ArrayList
@@ -39,6 +37,31 @@ function func_read_file($delimition_listener){
     $int_typ_flgs.Add($false) | Out-Null     # EOFかどうか -> [0]
     $int_typ_flgs.Add($TYP_CLEAR) | Out-Null # コード解析状態   -> [1]
     $int_typ_flgs.Add($TYP_CLEAR) | Out-Null # コメント解析状態 -> [2]
+
+    # <引数チェック> ----------------------------------------------------------------
+
+    if ( [string]::IsNullOrEmpty($encoding) ){
+        Write-Error "[error] Null or empty string cannot be specified as encoding"
+        return
+    }
+
+    try{
+        $enc_s = [Text.Encoding]::GetEncoding($encoding)
+    
+    } catch { # 存在しないエンコードを指定した場合
+        Write-Error ("[error] " + $_.Exception.Message)
+        return
+    }
+
+    try{
+        $reader = New-Object System.IO.FileStream($filepath, 3) # 読み取り専用で開く
+    
+    } catch { # ファイルオープン失敗の場合
+        Write-Error ("[error] " + $_.Exception.Message)
+        return
+    }
+
+    # --------------------------------------------------------------- </引数チェック> 
     
     
     $bytearr_crlf = $enc_s.GetBytes("`r`n")
@@ -452,7 +475,14 @@ function func_read_file($delimition_listener){
 
         $int_2darr_lex_history.Clear() # 字句解析履歴をクリア
 
-        & $script_delimition_listerner[0] # listener call
+        try{
+            & $script_delimition_listerner[0] # listener call
+        } catch {
+            Write-Error ("[error] " + $_.Exception.Message)
+            $reader.Close() # ファイルクローズ
+            return
+        }
+        
     }
 
     # 字句解析状態を `コード中` に設定
@@ -550,109 +580,6 @@ function func_read_file($delimition_listener){
 
         }
     }
-}
-
-$enc_s = [Text.Encoding]::GetEncoding($str_enc_name)
-$reader = New-Object System.IO.FileStream($in, 3)
-$writer = New-Object System.IO.StreamWriter($out, $false, $enc_s)
-$writer2 = New-Object System.IO.StreamWriter($out2, $false, $enc_s)
-
-$test_listener = {
-
-    #Write-Host "listned"
     
-    $sb=New-Object System.Text.StringBuilder
-
-    for ($l1 = 0 ; $l1 -lt $int32_3darr_delimited_bytes.Count ; $l1++){
-
-        for ($l2 = 0 ; $l2 -lt $int32_3darr_delimited_bytes[$l1].Count ; $l2++){
-
-            if ($int32_3darr_delimited_bytes[$l1][$l2].Count -gt 0){
-                $strstr = $enc_s.GetString($int32_3darr_delimited_bytes[$l1][$l2])
-                $sb.Append($strstr) | Out-Null
-            }
-
-            if ($l2 -eq 1){
-            
-                # $strstr = $enc_s.GetString($int32_3darr_delimited_bytes[$l1][$l2])
-
-                # if ( # CRLF の場合
-                #     ( $strstr -eq "`r`n")
-                # ){
-                #     $writer2.Write("CRLF`r`n")
-                #     Write-Host "CRLF"
-                
-                # } elseif ( # CR の場合
-                #     ( $strstr -eq "`r")
-                # ){
-                #     $writer2.Write("CR`r`n")
-                #     Write-Host "CR"
-                
-                # } elseif ( # LF の場合
-                #     ( $strstr -eq "`n")
-                # ){
-                #     $writer2.Write("LF`r`n")
-                #     Write-Host "LF"
-                # }
-            }
-        }
-    }
-
-    # if($int_typ_flgs[0]){ # EOF の場合
-    #     $writer2.Write("EOF`r`n")
-    # }
-
-    $writer.Write($sb)
-
-    # Write-Host '$int_typ_flgs[0]:' ([string]$int_typ_flgs[0])
-    # Write-Host '$int_typ_flgs[1]:' ([string]$int_typ_flgs[1])
-    # Write-Host '$int_typ_flgs[2]' ([string]$int_typ_flgs[2])
-
-    if ( ($int_typ_flgs[1] -band (1) ) -eq 1 ){ # コード解析中の場合
-
-        if ($int_typ_flgs[1] -eq $TYP_CODE_QUOTE){ # `'` 中の場合
-            $writer2.Write("QUOTE_START")
-            $writer2.Write($sb)
-            if(!$int_typ_flgs[0]){
-                $writer2.Write("QUOTE_END")
-            }
-
-        } elseif ($int_typ_flgs[1] -eq $TYP_CODE_DQUOTE) { # `"` 中の場合
-            $writer2.Write("DOUBLE_QUOTE_START")
-            $writer2.Write($sb)
-            if(!$int_typ_flgs[0]){
-                $writer2.Write("DOUBLE_QUOTE_END")
-            }
-        } else {
-            $writer2.Write($sb)
-        }
-
-    } else { # コメント解析中の場合
-
-        if ($int_typ_flgs[2] -eq $TYP_COMMENT_SINGLE){ # `'` 中の場合
-            $writer2.Write("DOUBLE_SLASH_START")
-            $writer2.Write($sb)
-            $writer2.Write("DOUBLE_SLASH_END")
-
-        } elseif ($int_typ_flgs[2] -eq $TYP_COMMENT_MULTI) { # `"` 中の場合
-            $writer2.Write("SLASHASTER_START")
-            $writer2.Write($sb)
-            if(!$int_typ_flgs[0]){
-                $writer2.Write("SLASHASTER_END")
-            }
-        } else {
-            $writer2.Write("UNKOWN")
-            $writer2.Write($sb)
-            if(!$int_typ_flgs[0]){
-                $writer2.Write("UNKOWN_END")
-            }
-        }
-    }
+    $reader.Close() # ファイルクローズ
 }
-
-func_read_file ($test_listener)
-
-# ファイルクローズ
-$reader.Close()
-$writer.Close()
-$writer2.Close()
