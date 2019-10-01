@@ -72,47 +72,6 @@ $delimition_listener = {
     }
 
     $sw_for_copy.Write($sb)
-
-    # if ( ($int_typ_flgs[1] -band (1) ) -eq 1 ){ # コード解析中の場合
-
-    #     if ($int_typ_flgs[1] -eq $TYP_CODE_QUOTE){ # `'` 中の場合
-    #         $sw_for_lex.Write("QUOTE_START")
-    #         $sw_for_lex.Write($sb)
-    #         if(!$int_typ_flgs[0]){
-    #             $sw_for_lex.Write("QUOTE_END")
-    #         }
-
-    #     } elseif ($int_typ_flgs[1] -eq $TYP_CODE_DQUOTE) { # `"` 中の場合
-    #         $sw_for_lex.Write("DOUBLE_QUOTE_START")
-    #         $sw_for_lex.Write($sb)
-    #         if(!$int_typ_flgs[0]){
-    #             $sw_for_lex.Write("DOUBLE_QUOTE_END")
-    #         }
-    #     } else {
-    #         $sw_for_lex.Write($sb)
-    #     }
-
-    # } else { # コメント解析中の場合
-
-    #     if ($int_typ_flgs[2] -eq $TYP_COMMENT_SINGLE){ # `'` 中の場合
-    #         $sw_for_lex.Write("DOUBLE_SLASH_START")
-    #         $sw_for_lex.Write($sb)
-    #         $sw_for_lex.Write("DOUBLE_SLASH_END")
-
-    #     } elseif ($int_typ_flgs[2] -eq $TYP_COMMENT_MULTI) { # `"` 中の場合
-    #         $sw_for_lex.Write("SLASHASTER_START")
-    #         $sw_for_lex.Write($sb)
-    #         if(!$int_typ_flgs[0]){
-    #             $sw_for_lex.Write("SLASHASTER_END")
-    #         }
-    #     } else {
-    #         $sw_for_lex.Write("UNKOWN")
-    #         $sw_for_lex.Write($sb)
-    #         if(!$int_typ_flgs[0]){
-    #             $sw_for_lex.Write("UNKOWN_END")
-    #         }
-    #     }
-    # }
 }
 
 # import analyze_command.ps1

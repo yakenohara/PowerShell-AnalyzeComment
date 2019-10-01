@@ -31,40 +31,7 @@ try{
 
 $delimition_listener = {
 
-    $sb = New-Object System.Text.StringBuilder
-
-    for ($l1 = 0 ; $l1 -lt $delimitedBytes.Count ; $l1++){
-        for ($l2 = 0 ; $l2 -lt $delimitedBytes[$l1].Count ; $l2++){
-            if ($delimitedBytes[$l1][$l2].Count -gt 0){
-                $strstr = $enc_s.GetString($delimitedBytes[$l1][$l2])
-                $sb.Append($strstr) | Out-Null
-            }
-
-            if ($l2 -eq 1){
-            
-                # $strstr = $enc_s.GetString($delimitedBytes[$l1][$l2])
-
-                # if ( # CRLF の場合
-                #     ( $strstr -eq "`r`n")
-                # ){
-                #     $sw_for_lex.Write("CRLF`r`n")
-                #     Write-Host "CRLF"
-                
-                # } elseif ( # CR の場合
-                #     ( $strstr -eq "`r")
-                # ){
-                #     $sw_for_lex.Write("CR`r`n")
-                #     Write-Host "CR"
-                
-                # } elseif ( # LF の場合
-                #     ( $strstr -eq "`n")
-                # ){
-                #     $sw_for_lex.Write("LF`r`n")
-                #     Write-Host "LF"
-                # }
-            }
-        }
-    }
+    $sb = Stringify
 
     $sw_for_copy.Write($sb)
 

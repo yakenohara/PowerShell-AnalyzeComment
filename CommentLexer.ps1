@@ -583,3 +583,20 @@ function LexComment($filepath, $encoding, $delimition_listener){
     
     $reader.Close() # ファイルクローズ
 }
+
+
+function Stringify{
+
+    $_to_ret_str = New-Object System.Text.StringBuilder
+
+    for ($_l1 = 0 ; $_l1 -lt $delimitedBytes.Count ; $_l1++){
+        for ($_l2 = 0 ; $_l2 -lt $delimitedBytes[$_l1].Count ; $_l2++){
+            if ($delimitedBytes[$_l1][$_l2].Count -gt 0){
+                $_tmpstr = $enc_s.GetString($delimitedBytes[$_l1][$_l2])
+                $_to_ret_str.Append($_tmpstr) | Out-Null
+            }
+        }
+    }
+
+    Write-Output $_to_ret_str
+}
