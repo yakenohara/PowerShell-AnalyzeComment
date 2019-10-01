@@ -25,14 +25,14 @@ set-variable -name TYP_COMMENT -value 0x1 -option constant
 set-variable -name TYP_COMMENT_SINGLE -value 0x3 -option constant
 set-variable -name TYP_COMMENT_MULTI -value 0x5 -option constant
 
-function func_read_file($filepath, $encoding, $delimition_listener){
+function LexComment($filepath, $encoding, $delimition_listener){
 
     $int32arr_string_buffer = New-Object 'System.Collections.Generic.List[int32]'
     $int32_3darr_line_buffer = New-Object System.Collections.ArrayList
     $int32_3darr_read_buffer = New-Object System.Collections.ArrayList
     $int_2darr_lex_history = New-Object System.Collections.ArrayList
 
-    $int32_3darr_delimited_bytes = New-Object System.Collections.ArrayList
+    $delimitedBytes = New-Object System.Collections.ArrayList
     $int_typ_flgs = New-Object System.Collections.ArrayList
     $int_typ_flgs.Add($false) | Out-Null     # EOFかどうか -> [0]
     $int_typ_flgs.Add($TYP_CLEAR) | Out-Null # コード解析状態   -> [1]
@@ -419,21 +419,21 @@ function func_read_file($filepath, $encoding, $delimition_listener){
 
         $l2 = 0
 
-        $int32_3darr_delimited_bytes.Clear()
+        $delimitedBytes.Clear()
 
         # 行定義の直前までコピーする loop
         for ($l1 = 0 ; $l1 -lt $l1_to ; $l1++){
 
-            $lstidx = $int32_3darr_delimited_bytes.Add( (New-Object System.Collections.ArrayList) )
+            $lstidx = $delimitedBytes.Add( (New-Object System.Collections.ArrayList) )
 
-            $int32_3darr_delimited_bytes[$lstidx].Add( (New-Object 'System.Collections.Generic.List[int32]') ) | Out-Null
-            $int32_3darr_delimited_bytes[$lstidx].Add( (New-Object 'System.Collections.Generic.List[int32]') ) | Out-Null
+            $delimitedBytes[$lstidx].Add( (New-Object 'System.Collections.Generic.List[int32]') ) | Out-Null
+            $delimitedBytes[$lstidx].Add( (New-Object 'System.Collections.Generic.List[int32]') ) | Out-Null
 
             for ($l2 = 0 ; $l2 -lt 2 ; $l2++){
                 if( $int32_3darr_read_buffer[0][$l2].Count -gt 0){
 
                     for ($l3 = 0 ; $l3 -lt ($int32_3darr_read_buffer[0][$l2].Count) ; $l3++){
-                        $int32_3darr_delimited_bytes[$lstidx][$l2].Add( $int32_3darr_read_buffer[0][$l2][$l3] )
+                        $delimitedBytes[$lstidx][$l2].Add( $int32_3darr_read_buffer[0][$l2][$l3] )
                     }
                 }
             }
@@ -441,13 +441,13 @@ function func_read_file($filepath, $encoding, $delimition_listener){
         }
 
         # 行定義の最後をコピーする loop
-        $lstidx = $int32_3darr_delimited_bytes.Add( (New-Object System.Collections.ArrayList) )
-        $int32_3darr_delimited_bytes[$lstidx].Add( (New-Object 'System.Collections.Generic.List[int32]') ) | Out-Null
-        $int32_3darr_delimited_bytes[$lstidx].Add( (New-Object 'System.Collections.Generic.List[int32]') ) | Out-Null
+        $lstidx = $delimitedBytes.Add( (New-Object System.Collections.ArrayList) )
+        $delimitedBytes[$lstidx].Add( (New-Object 'System.Collections.Generic.List[int32]') ) | Out-Null
+        $delimitedBytes[$lstidx].Add( (New-Object 'System.Collections.Generic.List[int32]') ) | Out-Null
         for ($l2 = 0 ; $l2 -lt $l2_to ; $l2++){
             if( $int32_3darr_read_buffer[0][$l2].Count -gt 0){
                 for ($l3 = 0 ; $l3 -lt ($int32_3darr_read_buffer[0][$l2].Count) ; $l3++){
-                    $int32_3darr_delimited_bytes[$lstidx][$l2].Add( $int32_3darr_read_buffer[0][$l2][$l3] )
+                    $delimitedBytes[$lstidx][$l2].Add( $int32_3darr_read_buffer[0][$l2][$l3] )
                 }
             }
             $int32_3darr_read_buffer[0][$l2].Clear()
@@ -467,7 +467,7 @@ function func_read_file($filepath, $encoding, $delimition_listener){
 
         # スライスした 前半を コピー
         if ($int32arr_1st_of_sliced.Count -gt 0){
-            $int32_3darr_delimited_bytes[$lstidx][$l2] = $int32arr_1st_of_sliced
+            $delimitedBytes[$lstidx][$l2] = $int32arr_1st_of_sliced
         }
 
         # スライスした 後半を buffer に貯め直し

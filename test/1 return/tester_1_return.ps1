@@ -10,7 +10,7 @@
 
 # ----------------------------------------------------------------------------------------- </実行方法> 
 
-$ps1_path = "\..\..\analyze_command.ps1"
+$ps1_path = "\..\..\CommentLexer.ps1"
 $str_enc_name = "shift-jis"
 
 $to_lex_file = $Args[0]
@@ -33,16 +33,16 @@ $delimition_listener = {
 
     $sb = New-Object System.Text.StringBuilder
 
-    for ($l1 = 0 ; $l1 -lt $int32_3darr_delimited_bytes.Count ; $l1++){
-        for ($l2 = 0 ; $l2 -lt $int32_3darr_delimited_bytes[$l1].Count ; $l2++){
-            if ($int32_3darr_delimited_bytes[$l1][$l2].Count -gt 0){
-                $strstr = $enc_s.GetString($int32_3darr_delimited_bytes[$l1][$l2])
+    for ($l1 = 0 ; $l1 -lt $delimitedBytes.Count ; $l1++){
+        for ($l2 = 0 ; $l2 -lt $delimitedBytes[$l1].Count ; $l2++){
+            if ($delimitedBytes[$l1][$l2].Count -gt 0){
+                $strstr = $enc_s.GetString($delimitedBytes[$l1][$l2])
                 $sb.Append($strstr) | Out-Null
             }
 
             if ($l2 -eq 1){
             
-                $strstr = $enc_s.GetString($int32_3darr_delimited_bytes[$l1][$l2])
+                $strstr = $enc_s.GetString($delimitedBytes[$l1][$l2])
 
                 if ( # CRLF の場合
                     ( $strstr -eq "`r`n")
@@ -119,7 +119,7 @@ $delimition_listener = {
 . ( (Split-Path -Parent $MyInvocation.MyCommand.Path) + $ps1_path)
 
 # call
-func_read_file ($to_lex_file) ($str_enc_name) ($delimition_listener)
+LexComment ($to_lex_file) ($str_enc_name) ($delimition_listener)
 
 # file close
 $sw_for_copy.Close()
