@@ -78,7 +78,7 @@ $delimition_listener = {
 . ( (Split-Path -Parent $MyInvocation.MyCommand.Path) + $ps1_path)
 
 # call
-LexComment ($to_lex_file) ($str_enc_name) ($delimition_listener)
+LexLine ($to_lex_file) ($str_enc_name) ($delimition_listener)
 
 # file close
 $sw_for_copy.Close()
