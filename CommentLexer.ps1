@@ -26,12 +26,12 @@ set-variable -name TYP_COMMENT -value 0x1 -option constant
 set-variable -name TYP_COMMENT_SINGLE -value 0x3 -option constant
 set-variable -name TYP_COMMENT_MULTI -value 0x5 -option constant
 
-function _func_lex($filepath, $encoding, $delimition_listener){
+function _func_lex($filepath, $encoding, $_line_listener, $delimition_listener){
 
     $int32arr_string_buffer = New-Object 'System.Collections.Generic.List[int32]'
     $int32_3darr_line_buffer = New-Object System.Collections.ArrayList
     $int32_3darr_read_buffer = New-Object System.Collections.ArrayList
-    $int_2darr_lex_history = New-Object System.Collections.ArrayList
+    
 
     $delimitedBytes = New-Object System.Collections.ArrayList
     # $int_typ_flgs = New-Object System.Collections.ArrayList
@@ -70,6 +70,16 @@ function _func_lex($filepath, $encoding, $delimition_listener){
     $bytearr_doubleslath = $enc_s.GetBytes("//")
     $bytearr_slashaster = $enc_s.GetBytes("/*")
     $bytearr_asterslash = $enc_s.GetBytes("*/")
+
+    $_try_delimition_lister = {
+        try{
+            & $script_delimition_listerner[0] # listener call
+        } catch {
+            Write-Error ("[error] " + $_.Exception.Message)
+            $reader.Close() # ファイルクローズ
+            return #todo ここで return しても while($true)から break しない
+        }
+    }
 
     function func_read_line{
         
@@ -247,15 +257,7 @@ function _func_lex($filepath, $encoding, $delimition_listener){
         # スライスした 後半を buffer に貯め直し
         $int32_3darr_read_buffer[0][$l2_to] = $int32arr_2nd_of_sliced
 
-        $int_2darr_lex_history.Clear() # 字句解析履歴をクリア
 
-        try{
-            & $script_delimition_listerner[0] # listener call
-        } catch {
-            Write-Error ("[error] " + $_.Exception.Message)
-            $reader.Close() # ファイルクローズ
-            return #todo ここで return しても while($true)から break しない
-        }
         
     }
 
@@ -280,13 +282,15 @@ function _func_lex($filepath, $encoding, $delimition_listener){
         $int32_3darr_read_buffer[$int_last_index_of_read_buffer_l1].Add( (New-Object 'System.Collections.Generic.List[int32]') )  | Out-Null # 行文字列用
         $int32_3darr_read_buffer[$int_last_index_of_read_buffer_l1].Add( (New-Object 'System.Collections.Generic.List[int32]') )  | Out-Null # 改行 or EOF 格納用
 
-        . $script__listerner[0]
+        . $_line_listener
     }
     
     $reader.Close() # ファイルクローズ
 }
 
 function LexLine($filepath, $encoding, $delimition_listener){
+
+    
 
     $_listener = {
 
@@ -298,21 +302,23 @@ function LexLine($filepath, $encoding, $delimition_listener){
         if($int32arr_return_or_eof_read[0] -eq (-1)){ # EOF の場合            
             $int_typ_flgs[0] = $true
             func_slice_read_buffer ($int_last_index_of_read_buffer_l1) ($endindx) ($int32_3darr_read_buffer[$int_last_index_of_read_buffer_l1][$endindx].Count)
+            . $_try_delimition_lister
             break
 
-        } else {
-            $int32_3darr_read_buffer[$int_last_index_of_read_buffer_l1][++$endindx] = $int32arr_return_or_eof_read
+        } else { # EOF ではない場合
+            $int32_3darr_read_buffer[$int_last_index_of_read_buffer_l1][++$endindx] = $int32arr_return_or_eof_read # 改行コードを格納
             func_slice_read_buffer ($int_last_index_of_read_buffer_l1) ($endindx) ($int32_3darr_read_buffer[$int_last_index_of_read_buffer_l1][$endindx].Count)
+            . $_try_delimition_lister
         }
     }
 
     $int_typ_flgs = New-Object System.Collections.ArrayList
     $int_typ_flgs.Add($false) | Out-Null     # EOFかどうか -> [0]
 
-    $script__listerner = New-Object System.Collections.ArrayList
-    $script__listerner.Add($_listener) | Out-Null
+    # $script__listerner = New-Object System.Collections.ArrayList
+    # $script__listerner.Add($_listener) | Out-Null
 
-    _func_lex($filepath) ($encoding) ($delimition_listener)
+    _func_lex($filepath) ($encoding) ($_listener) ($delimition_listener)
 }
 
 function LexComment($filepath, $encoding, $delimition_listener){
@@ -342,6 +348,9 @@ function LexComment($filepath, $encoding, $delimition_listener){
 
                 # last index of lexical analysis history の直前までをコード解析の区切りとする
                 func_slice_read_buffer ($int_2darr_lex_history[$int_last_idx_of_lex_history][0]) ($int_2darr_lex_history[$int_last_idx_of_lex_history][1]) ($int_2darr_lex_history[$int_last_idx_of_lex_history][2])
+                $int_2darr_lex_history.Clear() # 字句解析履歴をクリア
+                . $_try_delimition_lister
+                
                 $int_typ_flgs[1] = $TYP_CODE_QUOTE
                 $int_typ_flgs[2] = $TYP_CLEAR
 
@@ -365,6 +374,9 @@ function LexComment($filepath, $encoding, $delimition_listener){
 
                 # last index of lexical analysis history の直前までをコード解析の区切りとする
                 func_slice_read_buffer ($int_2darr_lex_history[$int_last_idx_of_lex_history][0]) ($int_2darr_lex_history[$int_last_idx_of_lex_history][1]) ($int_2darr_lex_history[$int_last_idx_of_lex_history][2])
+                $int_2darr_lex_history.Clear() # 字句解析履歴をクリア
+                . $_try_delimition_lister
+
                 $int_typ_flgs[1] = $TYP_CODE_DQUOTE
                 $int_typ_flgs[2] = $TYP_CLEAR
 
@@ -383,6 +395,9 @@ function LexComment($filepath, $encoding, $delimition_listener){
             
             # 2nd of last index of lexical analysis history の直前までをコード解析の区切りとする
             func_slice_read_buffer ($int_2darr_lex_history[$int_last_idx_of_lex_history-1][0]) ($int_2darr_lex_history[$int_last_idx_of_lex_history-1][1]) ($int_2darr_lex_history[$int_last_idx_of_lex_history-1][2])
+            $int_2darr_lex_history.Clear() # 字句解析履歴をクリア
+            . $_try_delimition_lister
+
             $int_typ_flgs[1] = $TYP_CLEAR
             $int_typ_flgs[2] = $TYP_COMMENT_SINGLE
 
@@ -400,6 +415,9 @@ function LexComment($filepath, $encoding, $delimition_listener){
             
             # 2nd of last index of lexical analysis history の直前までをコード解析の区切りとする
             func_slice_read_buffer ($int_2darr_lex_history[$int_last_idx_of_lex_history-1][0]) ($int_2darr_lex_history[$int_last_idx_of_lex_history-1][1]) ($int_2darr_lex_history[$int_last_idx_of_lex_history-1][2])
+            $int_2darr_lex_history.Clear() # 字句解析履歴をクリア
+            . $_try_delimition_lister
+            
             $int_typ_flgs[1] = $TYP_CLEAR
             $int_typ_flgs[2] = $TYP_COMMENT_MULTI
 
@@ -427,6 +445,9 @@ function LexComment($filepath, $encoding, $delimition_listener){
                 # 字句解析した最後までをコード解析の区切りとする
                 $int_last_index_of_read_buffer_l1 = $int32_3darr_read_buffer.Count -1
                 func_slice_read_buffer ($int_last_index_of_read_buffer_l1) (0) ($int32_3darr_read_buffer[$int_last_index_of_read_buffer_l1][0].Count)
+                $int_2darr_lex_history.Clear() # 字句解析履歴をクリア
+                . $_try_delimition_lister
+
                 $int_typ_flgs[1] = $TYP_CODE
                 $int_typ_flgs[2] = $TYP_CLEAR
 
@@ -455,6 +476,9 @@ function LexComment($filepath, $encoding, $delimition_listener){
                 # 字句解析した最後までをコード解析の区切りとする
                 $int_last_index_of_read_buffer_l1 = $int32_3darr_read_buffer.Count -1
                 func_slice_read_buffer ($int_last_index_of_read_buffer_l1) (0) ($int32_3darr_read_buffer[$int_last_index_of_read_buffer_l1][0].Count)
+                $int_2darr_lex_history.Clear() # 字句解析履歴をクリア
+                . $_try_delimition_lister
+
                 $int_typ_flgs[1] = $TYP_CODE
                 $int_typ_flgs[2] = $TYP_CLEAR
 
@@ -478,6 +502,9 @@ function LexComment($filepath, $encoding, $delimition_listener){
             # 字句解析した最後までをコード解析の区切りとする
             $int_last_index_of_read_buffer_l1 = $int32_3darr_read_buffer.Count -1
             func_slice_read_buffer ($int_last_index_of_read_buffer_l1) (0) ($int32_3darr_read_buffer[$int_last_index_of_read_buffer_l1][0].Count)
+            $int_2darr_lex_history.Clear() # 字句解析履歴をクリア
+            . $_try_delimition_lister
+
             $int_typ_flgs[1] = $TYP_CODE
             $int_typ_flgs[2] = $TYP_CLEAR
 
@@ -524,6 +551,9 @@ function LexComment($filepath, $encoding, $delimition_listener){
 
             # 字句解析した最後までをコード解析の区切りとする
             func_slice_read_buffer ($first_layer) ($scond_layer) ($third_layer)
+            $int_2darr_lex_history.Clear() # 字句解析履歴をクリア
+            . $_try_delimition_lister
+
             $int_typ_flgs[1] = $TYP_CODE
             $int_typ_flgs[2] = $TYP_CLEAR
 
@@ -580,6 +610,8 @@ function LexComment($filepath, $encoding, $delimition_listener){
             # 字句解析した最後までをコード解析の区切りとする
             $int_last_index_of_read_buffer_l1 = $int32_3darr_read_buffer.Count -1
             func_slice_read_buffer ($int_last_index_of_read_buffer_l1) (0) ($int32_3darr_read_buffer[$int_last_index_of_read_buffer_l1][0].Count)
+            $int_2darr_lex_history.Clear() # 字句解析履歴をクリア
+            . $_try_delimition_lister
 
             break
         }
@@ -597,6 +629,8 @@ function LexComment($filepath, $encoding, $delimition_listener){
 
         }
     }
+
+    $int_2darr_lex_history = New-Object System.Collections.ArrayList
 
     # 字句解析状態を `コード中` に設定
     # ( ※note
@@ -626,10 +660,10 @@ function LexComment($filepath, $encoding, $delimition_listener){
     $int_typ_flgs[1] = $TYP_CODE
     $int_typ_flgs[2] = $TYP_CLEAR
 
-    $script__listerner = New-Object System.Collections.ArrayList
-    $script__listerner.Add($_listener) | Out-Null
+    # $script__listerner = New-Object System.Collections.ArrayList
+    # $script__listerner.Add($_listener) | Out-Null
 
-    _func_lex($filepath) ($encoding) ($delimition_listener)
+    _func_lex($filepath) ($encoding) ($_listener) ($delimition_listener)
 }
 
 
