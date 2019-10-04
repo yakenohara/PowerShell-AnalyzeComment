@@ -59,6 +59,11 @@ function _func_lex($_file_path, $_str_encoding, $_scrpt_blc_line_listener, $_del
 
     # `$_delimition_listener` 内で Stringify が call された時に使用する
     $enc = 0
+
+    $_before_progress = New-Object System.Collections.ArrayList
+    $progress = New-Object System.Collections.ArrayList
+    # [0] for file info
+    # [1] for read position
     
     # <引数チェック> ----------------------------------------------------------------
 
@@ -77,6 +82,9 @@ function _func_lex($_file_path, $_str_encoding, $_scrpt_blc_line_listener, $_del
 
     try{
         $_fs_reader = New-Object System.IO.FileStream($_file_path, 3) # 読み取り専用で開く
+        $_before_progress.Add( 1 ) | Out-Null # read position
+        $progress.Add( (New-Object System.IO.FileInfo($_file_path)) ) | Out-Null
+        $progress.Add( 0 ) | Out-Null # read position
     
     } catch { # ファイルオープン失敗の場合
         Write-Error ("[error] " + $_.Exception.Message)
@@ -95,13 +103,19 @@ function _func_lex($_file_path, $_str_encoding, $_scrpt_blc_line_listener, $_del
     $_bytearr_asterslash    = $enc.GetBytes("*/")
 
     $_scrpt_blc_try_delimition_lister = {
-        try{
-            & $_delimition_listener # listener call
-        } catch {
-            Write-Error ("[error] " + $_.Exception.Message)
-            $_fs_reader.Close() # ファイルクローズ
-            return # _func_lex を終了
-        }
+
+        # if ( $progress[1] -gt $_before_progress[0] ){ #todo <-最初にコード以外で開始された場合と最後にコード以外で終了した場合にしか効果がない&1バイトオンリーのファイルを処理できない
+
+            try{
+                & $_delimition_listener # listener call
+            } catch {
+                Write-Error ("[error] " + $_.Exception.Message)
+                $_fs_reader.Close() # ファイルクローズ
+                return # _func_lex を終了
+            }
+
+            $_before_progress[0] = $progress[1]
+        # }
     }
 
     function _func_read_line{
@@ -156,7 +170,7 @@ function _func_lex($_file_path, $_str_encoding, $_scrpt_blc_line_listener, $_del
         while($true){
     
             $byte_char = $_fs_reader.ReadByte()
-        
+            
             if ($byte_char -eq (-1)){
         
                 if ($_int32_genlst_chr_buf.Count -gt 0){ # 1 文字以上 read() している場合
@@ -310,6 +324,7 @@ function LexLine($filePath, $encoding, $delimitionListener){
 
         $endindx = 0
         $_int32_3Darr_lex_buf[$_int_lex_buf_l1_lst_idx][$endindx] = $_int32arr_lst_read_line
+        $progress[1] += $_int32arr_lst_read_line.Count
 
         if($_int32arr_lst_read_nlc[0] -eq (-1)){ # EOF の場合            
             
@@ -323,6 +338,7 @@ function LexLine($filePath, $encoding, $delimitionListener){
 
         } else { # EOF ではない場合
             $_int32_3Darr_lex_buf[$_int_lex_buf_l1_lst_idx][++$endindx] = $_int32arr_lst_read_nlc # 改行コードを格納
+            $progress[1] += $_int32arr_lst_read_nlc.Count
             _func_slice_lex_buf ($_int_lex_buf_l1_lst_idx) ($endindx) ($_int32_3Darr_lex_buf[$_int_lex_buf_l1_lst_idx][$endindx].Count)
             . $_scrpt_blc_scrpt_blc_copy_flags
             . $_scrpt_blc_try_delimition_lister # `$delimitionListener` の実行
@@ -567,6 +583,7 @@ function LexComment($filePath, $encoding, $delimitionListener){
                 for ($int_char_index_of_line = 0 ; $int_char_index_of_line -lt $_int32arr_lst_read_nlc.Count ; $int_char_index_of_line++ ){
                     
                     $_int32_3Darr_lex_buf[$first_layer][$scond_layer].Add($_int32arr_lst_read_nlc[$int_char_index_of_line])
+                    $progress[1]++
                     $int_added_index = $_int32_3Darr_lex_buf[$first_layer][$scond_layer].Count - 1
                     $_lex_history.Add( @($first_layer, $scond_layer, $int_added_index) ) | Out-Null
 
@@ -608,6 +625,7 @@ function LexComment($filePath, $encoding, $delimitionListener){
 
             $_int_lex_buf_l1_lst_idx = $_int32_3Darr_lex_buf.Count -1
             $_int32_3Darr_lex_buf[$_int_lex_buf_l1_lst_idx][0].Add($_int32arr_lst_read_line[$int_char_index_of_line])
+            $progress[1]++
             $int_added_index = $_int32_3Darr_lex_buf[$_int_lex_buf_l1_lst_idx][0].Count - 1
 
             if( # 改行に対するエスケープの場合
@@ -649,6 +667,7 @@ function LexComment($filePath, $encoding, $delimitionListener){
 
             $_int_lex_buf_l1_lst_idx = $_int32_3Darr_lex_buf.Count -1
             $_int32_3Darr_lex_buf[$_int_lex_buf_l1_lst_idx][1].Add($_int32arr_lst_read_nlc[$int_char_index_of_line])
+            $progress[1]++
             $int_added_index = $_int32_3Darr_lex_buf[$_int_lex_buf_l1_lst_idx][1].Count - 1
 
             if ( ! $_bool_escaped_return[0] ) { # エスケープされた改行ではない場合
