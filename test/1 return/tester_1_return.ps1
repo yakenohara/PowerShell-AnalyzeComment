@@ -66,7 +66,7 @@ $delimition_listener = {
         }
     }
 
-    if($int_typ_flgs[0]){ # EOF の場合
+    if($typeFlags[0]){ # EOF の場合
         $sw_for_lex.Write("EOF`r`n")
         Write-Host "EOF"
     }
