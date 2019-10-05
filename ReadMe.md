@@ -1,10 +1,15 @@
-Powershell で 1 byte 単位に字句解析する  
+![Concept image](assets/images/2019-10-05-12-18-14.png)
 
-You can try `example.ps1 example.c` command after pulling this repository.
+Detect the following string from source code and convert it to byte array,
+and call specified script blck.
 
-# Installation
+ - `//` comment  
+ - `/* */` comment  
+ - Character string enclosed in `'` or `"`  
+ - Other than those above  
 
-Place `CommentLexer.ps1` anywhere you like.
+You can try `example.ps1 example.c` command after pulling this repository.  
+This `example.ps1` script extracts only comments and output to `example_comment.c`.
 
 # Example
 
@@ -29,21 +34,24 @@ Place `CommentLexer.ps1` anywhere you like.
 | TYP_COMMENT_MULTI  |   0x5 |
 
  - `$progress`  
-   - [0]  
-   - [1]  
+   - `$progress[0]`  
+     `System.IO.FileInfo` object of specified file  
+
+   - `$progress[1]`  
+      Delimited byte point
 
  `$typeFlags`
-   - [0]  
+   - `$typeFlags[0]`  
 
-|       2       |       1       |          0           |
-| :-----------: | :-----------: | :------------------: |
-| `"` 内 or not | `'` 内 or not | code 解析状態 or not |
+|   2    |   1    |       0       |
+| :----: | :----: | :-----------: |
+| `"` 内 | `'` 内 | code 解析状態 |
 
-   - [1]  
+   - `$typeFlags[1]`  
 
-|         2         |       1        |            0            |
-| :---------------: | :------------: | :---------------------: |
-| `/* */` 内 or not | `//` 内 or not | comment 解析状態 or not |
+|     2      |    1    |        0         |
+| :--------: | :-----: | :--------------: |
+| `/* */` 内 | `//` 内 | comment 解析状態 |
 
 ## Functions
 
