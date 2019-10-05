@@ -33,15 +33,15 @@
 # }
 # ```
 
-set-variable -name TYP_CLEAR -value 0x0 -option constant
+set-variable -name TYP_CLEAR           -value 0x0 -option constant
 
-set-variable -name TYP_CODE -value 0x1 -option constant
-set-variable -name TYP_CODE_QUOTE -value 0x3 -option constant
-set-variable -name TYP_CODE_DQUOTE -value 0x5 -option constant
+set-variable -name TYP_CODE            -value 0x1 -option constant
+set-variable -name TYP_CODE_QUOTE      -value 0x3 -option constant
+set-variable -name TYP_CODE_DQUOTE     -value 0x5 -option constant
 
-set-variable -name TYP_COMMENT -value 0x1 -option constant
-set-variable -name TYP_COMMENT_SINGLE -value 0x3 -option constant
-set-variable -name TYP_COMMENT_MULTI -value 0x5 -option constant
+set-variable -name TYP_COMMENT         -value 0x1 -option constant
+set-variable -name TYP_COMMENT_SINGLE  -value 0x3 -option constant
+set-variable -name TYP_COMMENT_MULTI   -value 0x5 -option constant
 
 function _func_lex($_file_path, $_str_encoding, $_scrpt_blc_line_listener, $_delimition_listener){
 
@@ -60,7 +60,6 @@ function _func_lex($_file_path, $_str_encoding, $_scrpt_blc_line_listener, $_del
     # `$_delimition_listener` 内で Stringify が call された時に使用する
     $enc = 0
 
-    $_before_progress = New-Object System.Collections.ArrayList
     $progress = New-Object System.Collections.ArrayList
     # [0] for file info
     # [1] for read position
@@ -82,7 +81,6 @@ function _func_lex($_file_path, $_str_encoding, $_scrpt_blc_line_listener, $_del
 
     try{
         $_fs_reader = New-Object System.IO.FileStream($_file_path, 3) # 読み取り専用で開く
-        $_before_progress.Add( 1 ) | Out-Null # read position
         $progress.Add( (New-Object System.IO.FileInfo($_file_path)) ) | Out-Null
         $progress.Add( 0 ) | Out-Null # read position
     
@@ -104,18 +102,13 @@ function _func_lex($_file_path, $_str_encoding, $_scrpt_blc_line_listener, $_del
 
     $_scrpt_blc_try_delimition_lister = {
 
-        # if ( $progress[1] -gt $_before_progress[0] ){ #todo <-最初にコード以外で開始された場合と最後にコード以外で終了した場合にしか効果がない&1バイトオンリーのファイルを処理できない
-
-            try{
-                & $_delimition_listener # listener call
-            } catch {
-                Write-Error ("[error] " + $_.Exception.Message)
-                $_fs_reader.Close() # ファイルクローズ
-                return # _func_lex を終了
-            }
-
-            $_before_progress[0] = $progress[1]
-        # }
+        try{
+            & $_delimition_listener # listener call
+        } catch {
+            Write-Error ("[error] " + $_.Exception.Message)
+            $_fs_reader.Close() # ファイルクローズ
+            return # _func_lex を終了
+        }
     }
 
     function _func_read_line{
@@ -238,9 +231,20 @@ function _func_lex($_file_path, $_str_encoding, $_scrpt_blc_line_listener, $_del
 
     function _func_slice_lex_buf($l1_lst_idx, $l2_lst_idx, $l3_1st_idx_of_2nd){
 
+        # Write-Host ('$l1_lst_idx:' + ([string]$l1_lst_idx) + ', $l2_lst_idx:' + ([string]$l2_lst_idx) + ', $l3_1st_idx_of_2nd:' + ([string]$l3_1st_idx_of_2nd))
+
         $l2 = 0
 
         $delimitedBytes.Clear()
+
+        if ( # 区切りる必要がない場合
+            ($l1_lst_idx -eq 0) -and
+            ($l2_lst_idx -eq 0) -and
+            ($l3_1st_idx_of_2nd -eq 0)
+        ){
+            Write-Output $false # '区切りませんでした' を返す
+            return
+        }
 
         # 行定義の直前までコピーする loop
         for ($l1 = 0 ; $l1 -lt $l1_lst_idx ; $l1++){
@@ -292,7 +296,9 @@ function _func_lex($_file_path, $_str_encoding, $_scrpt_blc_line_listener, $_del
         }
 
         # スライスした 後半を buffer に貯め直し
-        $_int32_3Darr_lex_buf[0][$l2_lst_idx] = $int32arr_2nd_of_sliced   
+        $_int32_3Darr_lex_buf[0][$l2_lst_idx] = $int32arr_2nd_of_sliced
+
+        Write-Output $true # '区切りました' を返す
     }
 
     # EOF まで read() する loop
@@ -382,10 +388,13 @@ function LexComment($filePath, $encoding, $delimitionListener){
             } else { # エスケープされていない `'` の場合
 
                 # last index of lexical analysis history の直前までをコード解析の区切りとする
-                _func_slice_lex_buf ($_lex_history[$_lst_his][0]) ($_lex_history[$_lst_his][1]) ($_lex_history[$_lst_his][2])
+                $_was_delimited = _func_slice_lex_buf ($_lex_history[$_lst_his][0]) ($_lex_history[$_lst_his][1]) ($_lex_history[$_lst_his][2])
                 $_lex_history.Clear() # 字句解析履歴をクリア
-                . $_scrpt_blc_scrpt_blc_copy_flags
-                . $_scrpt_blc_try_delimition_lister # `$delimitionListener` の実行
+
+                if ($_was_delimited){
+                    . $_scrpt_blc_scrpt_blc_copy_flags
+                    . $_scrpt_blc_try_delimition_lister # `$delimitionListener` の実行
+                }
                 
                 $_intarr_typ_flgs[1] = $TYP_CODE_QUOTE
                 $_intarr_typ_flgs[2] = $TYP_CLEAR
@@ -409,10 +418,13 @@ function LexComment($filePath, $encoding, $delimitionListener){
             } else { # エスケープされていない `"` の場合
 
                 # last index of lexical analysis history の直前までをコード解析の区切りとする
-                _func_slice_lex_buf ($_lex_history[$_lst_his][0]) ($_lex_history[$_lst_his][1]) ($_lex_history[$_lst_his][2])
+                $_was_delimited = _func_slice_lex_buf ($_lex_history[$_lst_his][0]) ($_lex_history[$_lst_his][1]) ($_lex_history[$_lst_his][2])
                 $_lex_history.Clear() # 字句解析履歴をクリア
-                . $_scrpt_blc_scrpt_blc_copy_flags
-                . $_scrpt_blc_try_delimition_lister # `$delimitionListener` の実行
+                
+                if ($_was_delimited){
+                    . $_scrpt_blc_scrpt_blc_copy_flags
+                    . $_scrpt_blc_try_delimition_lister # `$delimitionListener` の実行
+                }
 
                 $_intarr_typ_flgs[1] = $TYP_CODE_DQUOTE
                 $_intarr_typ_flgs[2] = $TYP_CLEAR
@@ -431,10 +443,13 @@ function LexComment($filePath, $encoding, $delimitionListener){
         ){
             
             # 2nd of last index of lexical analysis history の直前までをコード解析の区切りとする
-            _func_slice_lex_buf ($_lex_history[$_lst_his-1][0]) ($_lex_history[$_lst_his-1][1]) ($_lex_history[$_lst_his-1][2])
+            $_was_delimited = _func_slice_lex_buf ($_lex_history[$_lst_his-1][0]) ($_lex_history[$_lst_his-1][1]) ($_lex_history[$_lst_his-1][2])
             $_lex_history.Clear() # 字句解析履歴をクリア
-            . $_scrpt_blc_scrpt_blc_copy_flags
-            . $_scrpt_blc_try_delimition_lister # `$delimitionListener` の実行
+
+            if ($_was_delimited){
+                . $_scrpt_blc_scrpt_blc_copy_flags
+                . $_scrpt_blc_try_delimition_lister # `$delimitionListener` の実行
+            }
 
             $_intarr_typ_flgs[1] = $TYP_CLEAR
             $_intarr_typ_flgs[2] = $TYP_COMMENT_SINGLE
@@ -452,10 +467,13 @@ function LexComment($filePath, $encoding, $delimitionListener){
         ){
             
             # 2nd of last index of lexical analysis history の直前までをコード解析の区切りとする
-            _func_slice_lex_buf ($_lex_history[$_lst_his-1][0]) ($_lex_history[$_lst_his-1][1]) ($_lex_history[$_lst_his-1][2])
+            $_was_delimited = _func_slice_lex_buf ($_lex_history[$_lst_his-1][0]) ($_lex_history[$_lst_his-1][1]) ($_lex_history[$_lst_his-1][2])
             $_lex_history.Clear() # 字句解析履歴をクリア
-            . $_scrpt_blc_scrpt_blc_copy_flags
-            . $_scrpt_blc_try_delimition_lister # `$delimitionListener` の実行
+
+            if ($_was_delimited){
+                . $_scrpt_blc_scrpt_blc_copy_flags
+                . $_scrpt_blc_try_delimition_lister # `$delimitionListener` の実行
+            }
             
             $_intarr_typ_flgs[1] = $TYP_CLEAR
             $_intarr_typ_flgs[2] = $TYP_COMMENT_MULTI
@@ -483,10 +501,13 @@ function LexComment($filePath, $encoding, $delimitionListener){
 
                 # 字句解析した最後までをコード解析の区切りとする
                 $_int_lex_buf_l1_lst_idx = $_int32_3Darr_lex_buf.Count -1
-                _func_slice_lex_buf ($_int_lex_buf_l1_lst_idx) (0) ($_int32_3Darr_lex_buf[$_int_lex_buf_l1_lst_idx][0].Count)
+                $_was_delimited = _func_slice_lex_buf ($_int_lex_buf_l1_lst_idx) (0) ($_int32_3Darr_lex_buf[$_int_lex_buf_l1_lst_idx][0].Count)
                 $_lex_history.Clear() # 字句解析履歴をクリア
-                . $_scrpt_blc_scrpt_blc_copy_flags
-                . $_scrpt_blc_try_delimition_lister # `$delimitionListener` の実行
+
+                if ($_was_delimited){
+                    . $_scrpt_blc_scrpt_blc_copy_flags
+                    . $_scrpt_blc_try_delimition_lister # `$delimitionListener` の実行
+                }
 
                 $_intarr_typ_flgs[1] = $TYP_CODE
                 $_intarr_typ_flgs[2] = $TYP_CLEAR
@@ -515,10 +536,13 @@ function LexComment($filePath, $encoding, $delimitionListener){
 
                 # 字句解析した最後までをコード解析の区切りとする
                 $_int_lex_buf_l1_lst_idx = $_int32_3Darr_lex_buf.Count -1
-                _func_slice_lex_buf ($_int_lex_buf_l1_lst_idx) (0) ($_int32_3Darr_lex_buf[$_int_lex_buf_l1_lst_idx][0].Count)
+                $_was_delimited = _func_slice_lex_buf ($_int_lex_buf_l1_lst_idx) (0) ($_int32_3Darr_lex_buf[$_int_lex_buf_l1_lst_idx][0].Count)
                 $_lex_history.Clear() # 字句解析履歴をクリア
-                . $_scrpt_blc_scrpt_blc_copy_flags
-                . $_scrpt_blc_try_delimition_lister # `$delimitionListener` の実行
+                
+                if ($_was_delimited){
+                    . $_scrpt_blc_scrpt_blc_copy_flags
+                    . $_scrpt_blc_try_delimition_lister # `$delimitionListener` の実行
+                }
 
                 $_intarr_typ_flgs[1] = $TYP_CODE
                 $_intarr_typ_flgs[2] = $TYP_CLEAR
@@ -542,10 +566,13 @@ function LexComment($filePath, $encoding, $delimitionListener){
             
             # 字句解析した最後までをコード解析の区切りとする
             $_int_lex_buf_l1_lst_idx = $_int32_3Darr_lex_buf.Count -1
-            _func_slice_lex_buf ($_int_lex_buf_l1_lst_idx) (0) ($_int32_3Darr_lex_buf[$_int_lex_buf_l1_lst_idx][0].Count)
+            $_was_delimited = _func_slice_lex_buf ($_int_lex_buf_l1_lst_idx) (0) ($_int32_3Darr_lex_buf[$_int_lex_buf_l1_lst_idx][0].Count)
             $_lex_history.Clear() # 字句解析履歴をクリア
-            . $_scrpt_blc_scrpt_blc_copy_flags
-            . $_scrpt_blc_try_delimition_lister # `$delimitionListener` の実行
+
+            if ($_was_delimited){
+                . $_scrpt_blc_scrpt_blc_copy_flags
+                . $_scrpt_blc_try_delimition_lister # `$delimitionListener` の実行
+            }
 
             $_intarr_typ_flgs[1] = $TYP_CODE
             $_intarr_typ_flgs[2] = $TYP_CLEAR
@@ -593,10 +620,13 @@ function LexComment($filePath, $encoding, $delimitionListener){
             $third_layer = $_int32_3Darr_lex_buf[$first_layer][$scond_layer].Count
 
             # 字句解析した最後までをコード解析の区切りとする
-            _func_slice_lex_buf ($first_layer) ($scond_layer) ($third_layer)
+            $_was_delimited = _func_slice_lex_buf ($first_layer) ($scond_layer) ($third_layer)
             $_lex_history.Clear() # 字句解析履歴をクリア
-            . $_scrpt_blc_scrpt_blc_copy_flags
-            . $_scrpt_blc_try_delimition_lister # `$delimitionListener` の実行
+
+            if ($_was_delimited){
+                . $_scrpt_blc_scrpt_blc_copy_flags
+                . $_scrpt_blc_try_delimition_lister # `$delimitionListener` の実行
+            }
 
             $_intarr_typ_flgs[1] = $TYP_CODE
             $_intarr_typ_flgs[2] = $TYP_CLEAR
@@ -654,10 +684,13 @@ function LexComment($filePath, $encoding, $delimitionListener){
 
             # 字句解析した最後までをコード解析の区切りとする
             $_int_lex_buf_l1_lst_idx = $_int32_3Darr_lex_buf.Count -1
-            _func_slice_lex_buf ($_int_lex_buf_l1_lst_idx) (0) ($_int32_3Darr_lex_buf[$_int_lex_buf_l1_lst_idx][0].Count)
+            $_was_delimited = _func_slice_lex_buf ($_int_lex_buf_l1_lst_idx) (0) ($_int32_3Darr_lex_buf[$_int_lex_buf_l1_lst_idx][0].Count)
             $_lex_history.Clear() # 字句解析履歴をクリア
-            . $_scrpt_blc_scrpt_blc_copy_flags
-            . $_scrpt_blc_try_delimition_lister # `$delimitionListener` の実行
+
+            if ($_was_delimited){
+                . $_scrpt_blc_scrpt_blc_copy_flags
+                . $_scrpt_blc_try_delimition_lister # `$delimitionListener` の実行
+            }
 
             break
         }
