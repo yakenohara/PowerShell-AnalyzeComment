@@ -17,22 +17,6 @@
 
 # -----------------------------------------------------------</License>
 
-
-# To see the list of supported code pages instantly,
-# execute the following powershell script.
-# ```
-# &{
-#     for($cnt = 0; $cnt -lt 65535; $cnt++){
-#         try{
-#             $enc = [Text.Encoding]::GetEncoding($cnt)
-#             $web_name = $enc.WebName
-#             $enc_name = $enc.EncodingName
-#             Write-Host "$cnt, $web_name, $enc_name"
-#         } catch {}
-#     }
-# }
-# ```
-
 set-variable -name TYP_CLEAR           -value 0x0 -option constant
 
 set-variable -name TYP_CODE            -value 0x1 -option constant

@@ -40,12 +40,12 @@ static char getCharFrom4Bits(unsigned char bits);
 
 
 //
-//1stˆø”‚Ì“à•”•\Œ»(Hex—ñ)‚ğ•¶š—ñ‚Å•Ô‚·
-//2ndˆø”‚É‚Í•¶š—ñ’·‚ğ“ü‚ê‚é
+//1stå¼•æ•°ã®å†…éƒ¨è¡¨ç¾(Hexåˆ—)ã‚’æ–‡å­—åˆ—ã§è¿”ã™
+//2ndå¼•æ•°ã«ã¯æ–‡å­—åˆ—é•·ã‚’å…¥ã‚Œã‚‹
 //
-//ˆÈ‰º‚Ìê‡‚ÍNULL‚ğ•Ô‚·
-//E2ndˆø”‚ªNULL‚Ìê‡
-//E•¶š—ñ‚ğŠi”[‚·‚éƒƒ‚ƒŠŠm•Û¸”s‚Ìê‡
+//ä»¥ä¸‹ã®å ´åˆã¯NULLã‚’è¿”ã™
+//ãƒ»2ndå¼•æ•°ãŒNULLã®å ´åˆ
+//ãƒ»æ–‡å­—åˆ—ã‚’æ ¼ç´ã™ã‚‹ãƒ¡ãƒ¢ãƒªç¢ºä¿å¤±æ•—ã®å ´åˆ
 //
 char* getInternalHexFromDouble(double val, unsigned char* len) {
 
@@ -54,12 +54,12 @@ char* getInternalHexFromDouble(double val, unsigned char* len) {
 }
 
 //
-//1stˆø”‚Ì“à•”•\Œ»(Hex—ñ)‚ğ•¶š—ñ‚Å•Ô‚·
-//2ndˆø”‚É‚Í•¶š—ñ’·‚ğ“ü‚ê‚é
+//1stå¼•æ•°ã®å†…éƒ¨è¡¨ç¾(Hexåˆ—)ã‚’æ–‡å­—åˆ—ã§è¿”ã™
+//2ndå¼•æ•°ã«ã¯æ–‡å­—åˆ—é•·ã‚’å…¥ã‚Œã‚‹
 //
-//ˆÈ‰º‚Ìê‡‚ÍNULL‚ğ•Ô‚·
-//E2ndˆø”‚ªNULL‚Ìê‡
-//E•¶š—ñ‚ğŠi”[‚·‚éƒƒ‚ƒŠŠm•Û¸”s‚Ìê‡
+//ä»¥ä¸‹ã®å ´åˆã¯NULLã‚’è¿”ã™
+//ãƒ»2ndå¼•æ•°ãŒNULLã®å ´åˆ
+//ãƒ»æ–‡å­—åˆ—ã‚’æ ¼ç´ã™ã‚‹ãƒ¡ãƒ¢ãƒªç¢ºä¿å¤±æ•—ã®å ´åˆ
 //
 char* getInternalHexFromFloat(float val, unsigned char* len) {
 
@@ -68,12 +68,12 @@ char* getInternalHexFromFloat(float val, unsigned char* len) {
 }
 
 //
-//1stˆø”‚Ì“à•”•\Œ»(Hex—ñ)‚ğ•¶š—ñ‚Å•Ô‚·
-//2ndˆø”‚É‚Í•¶š—ñ’·‚ğ“ü‚ê‚é
+//1stå¼•æ•°ã®å†…éƒ¨è¡¨ç¾(Hexåˆ—)ã‚’æ–‡å­—åˆ—ã§è¿”ã™
+//2ndå¼•æ•°ã«ã¯æ–‡å­—åˆ—é•·ã‚’å…¥ã‚Œã‚‹
 //
-//ˆÈ‰º‚Ìê‡‚ÍNULL‚ğ•Ô‚·
-//E2ndˆø”‚ªNULL‚Ìê‡
-//E•¶š—ñ‚ğŠi”[‚·‚éƒƒ‚ƒŠŠm•Û¸”s‚Ìê‡
+//ä»¥ä¸‹ã®å ´åˆã¯NULLã‚’è¿”ã™
+//ãƒ»2ndå¼•æ•°ãŒNULLã®å ´åˆ
+//ãƒ»æ–‡å­—åˆ—ã‚’æ ¼ç´ã™ã‚‹ãƒ¡ãƒ¢ãƒªç¢ºä¿å¤±æ•—ã®å ´åˆ
 //
 char* getInternalHexFromLong(long val, unsigned char* len) {
 
@@ -81,47 +81,47 @@ char* getInternalHexFromLong(long val, unsigned char* len) {
 
 }
 
-//‹¤’ÊŠÖ”
+//å…±é€šé–¢æ•°
 char* getInternalHexFromOperand(unsigned char* val, unsigned char bytesOfVal, unsigned char* len) {
 
-	//•Ï”éŒ¾
-	unsigned char   bytesToAlloc;     //•Ô‹p•¶š—ñ‚ÌByte’·
-	         char   relativeAddress;  //ƒAƒhƒŒƒX–ˆ“Ç‚İ‚İƒ‹[ƒv—pƒJƒEƒ“ƒ^
-	         char*  hexStr;           //•Ô‹p•¶š—ñ
-	unsigned char   indexOfHexStr;    //•Ô‹p•¶š—ñQÆ—p
-	         char   addressDirection; //ƒAƒhƒŒƒX“Ç‚İ‚İ•ûŒü
-	unsigned char   loopLimit;        //ƒ‹[ƒv§Œä—p
+	//å¤‰æ•°å®£è¨€
+	unsigned char   bytesToAlloc;     //è¿”å´æ–‡å­—åˆ—ã®Byteé•·
+	         char   relativeAddress;  //ã‚¢ãƒ‰ãƒ¬ã‚¹æ¯èª­ã¿è¾¼ã¿ãƒ«ãƒ¼ãƒ—ç”¨ã‚«ã‚¦ãƒ³ã‚¿
+	         char*  hexStr;           //è¿”å´æ–‡å­—åˆ—
+	unsigned char   indexOfHexStr;    //è¿”å´æ–‡å­—åˆ—å‚ç…§ç”¨
+	         char   addressDirection; //ã‚¢ãƒ‰ãƒ¬ã‚¹èª­ã¿è¾¼ã¿æ–¹å‘
+	unsigned char   loopLimit;        //ãƒ«ãƒ¼ãƒ—åˆ¶å¾¡ç”¨
 
-	//ˆø”ƒ`ƒFƒbƒN
+	//å¼•æ•°ãƒã‚§ãƒƒã‚¯
 	if (len == NULL) {
 		return NULL;
 	}
 
-	bytesToAlloc = bytesOfVal * 2 + 1; //1ƒoƒCƒg‚Í2•¶š‚Å•\Œ»‚³‚ê‚é(+1 ‚Í•¶š—ñÅŒã‚Ì'\0'—p)
+	bytesToAlloc = bytesOfVal * 2 + 1; //1ãƒã‚¤ãƒˆã¯2æ–‡å­—ã§è¡¨ç¾ã•ã‚Œã‚‹(+1 ã¯æ–‡å­—åˆ—æœ€å¾Œã®'\0'ç”¨)
 
 	//Alloc
 	hexStr = (char*)malloc(bytesToAlloc);
-	if (hexStr == NULL) { //ƒƒ‚ƒŠŠm•Û¸”s
+	if (hexStr == NULL) { //ãƒ¡ãƒ¢ãƒªç¢ºä¿å¤±æ•—æ™‚
 		return NULL;
 	}
 
-	memset(hexStr, '\0', bytesToAlloc); //'\0'‚Å‰Šú‰»
+	memset(hexStr, '\0', bytesToAlloc); //'\0'ã§åˆæœŸåŒ–
 
-	//Address“Ç‚İ‚İ•ûŒü
-	if (isBigEndian()) { //Big Endian‚Ìê‡
+	//Addressèª­ã¿è¾¼ã¿æ–¹å‘
+	if (isBigEndian()) { //Big Endianã®å ´åˆ
 		addressDirection = 1;
-		relativeAddress = 0u; //“Ç‚İ‚İŠJnˆÊ’u‚ÍÅ¬Address‚©‚ç
+		relativeAddress = 0u; //èª­ã¿è¾¼ã¿é–‹å§‹ä½ç½®ã¯æœ€å°Addressã‹ã‚‰
 
-	}else { //Little Endian‚Ìê‡
+	}else { //Little Endianã®å ´åˆ
 		addressDirection = -1;
-		relativeAddress = (bytesOfVal - 1u); //“Ç‚İ‚İŠJnˆÊ’u‚ÍÅ‘åAddress‚©‚ç
+		relativeAddress = (bytesOfVal - 1u); //èª­ã¿è¾¼ã¿é–‹å§‹ä½ç½®ã¯æœ€å¤§Addressã‹ã‚‰
 
 	}
 	
-	//•¶š—ñ¶¬
+	//æ–‡å­—åˆ—ç”Ÿæˆ
 	loopLimit = bytesToAlloc - 1;
 	for (indexOfHexStr = 0; indexOfHexStr < loopLimit ; indexOfHexStr += 2) {
-		writeHexfromChar(&hexStr[indexOfHexStr], val[relativeAddress]); //2•¶š–ˆ‚É‹L˜^
+		writeHexfromChar(&hexStr[indexOfHexStr], val[relativeAddress]); //2æ–‡å­—æ¯ã«è¨˜éŒ²
 		relativeAddress += addressDirection;
 
 	}
@@ -131,21 +131,21 @@ char* getInternalHexFromOperand(unsigned char* val, unsigned char bytesOfVal, un
 }
 
 //
-//2ndˆø”‚ÌBit•\Œ»‚ğhex•¶š‚Å1stˆø”‚É•Ô‚·
-//I—¹‚É0‚ğ•Ô‚·
-//2ndˆø”‚ªNULL‚Ìê‡‚ÍA1‚ğ•Ô‚·B
+//2ndå¼•æ•°ã®Bitè¡¨ç¾ã‚’hexæ–‡å­—ã§1stå¼•æ•°ã«è¿”ã™
+//çµ‚äº†æ™‚ã«0ã‚’è¿”ã™
+//2ndå¼•æ•°ãŒNULLã®å ´åˆã¯ã€1ã‚’è¿”ã™ã€‚
 //
 static unsigned char writeHexfromChar(char* toWrite, unsigned char ch) {
 
-	//ˆø”ƒ`ƒFƒbƒN
+	//å¼•æ•°ãƒã‚§ãƒƒã‚¯
 	if (toWrite == NULL) {
 		return 1;
 	}
 
-	//ãˆÊ4ƒrƒbƒgæ“¾
+	//ä¸Šä½4ãƒ“ãƒƒãƒˆå–å¾—
 	toWrite[0] = getCharFrom4Bits(ch >> 4);
 
-	//‰ºˆÊ4ƒrƒbƒgæ“¾
+	//ä¸‹ä½4ãƒ“ãƒƒãƒˆå–å¾—
 	toWrite[1] = getCharFrom4Bits(ch & 0xF);
 
 	return 0;
@@ -153,20 +153,20 @@ static unsigned char writeHexfromChar(char* toWrite, unsigned char ch) {
 
 
 //
-//0~16‚Ì”’l‚©‚çhex•\Œ»•¶š‚ğ•Ô‚·
-//0~17ˆÈŠO‚ªw’è‚³‚ê‚½ê‡‚ÍA'G'‚ğ•Ô‚·
+//0~16ã®æ•°å€¤ã‹ã‚‰hexè¡¨ç¾æ–‡å­—ã‚’è¿”ã™
+//0~17ä»¥å¤–ãŒæŒ‡å®šã•ã‚ŒãŸå ´åˆã¯ã€'G'ã‚’è¿”ã™
 //
 static char getCharFrom4Bits(unsigned char bits) {
 
 	char chToRet;
 
-	chToRet = 'G'; //”»•Ê•s”\‚ğİ’è(‰¼
+	chToRet = 'G'; //åˆ¤åˆ¥ä¸èƒ½ã‚’è¨­å®š(ä»®
 
-	if (0u <= bits && bits < 10u) { //'0'~'9'‚Ì
+	if (0u <= bits && bits < 10u) { //'0'~'9'ã®æ™‚
 		chToRet = '0' + bits;
 
 	}
-	else if (10u <= bits && bits <= 16u) { //'A'~'F'‚Ì
+	else if (10u <= bits && bits <= 16u) { //'A'~'F'ã®æ™‚
 		chToRet = 'A' + bits - 10u;
 
 	}
