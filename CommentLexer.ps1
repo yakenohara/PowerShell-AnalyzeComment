@@ -320,7 +320,7 @@ function LexLine($filePath, $encoding, $delimitionListener){
             
             $_intarr_typ_flgs[0] = $true
 
-            _func_slice_lex_buf ($_int_lex_buf_l1_lst_idx) ($endindx) ($_int32_3Darr_lex_buf[$_int_lex_buf_l1_lst_idx][$endindx].Count)
+            _func_slice_lex_buf ($_int_lex_buf_l1_lst_idx) ($endindx) ($_int32_3Darr_lex_buf[$_int_lex_buf_l1_lst_idx][$endindx].Count) | Out-Null
             . $_scrpt_blc_scrpt_blc_copy_flags
             . $_scrpt_blc_try_delimition_lister # `$delimitionListener` の実行
 
@@ -329,7 +329,7 @@ function LexLine($filePath, $encoding, $delimitionListener){
         } else { # EOF ではない場合
             $_int32_3Darr_lex_buf[$_int_lex_buf_l1_lst_idx][++$endindx] = $_int32arr_lst_read_nlc # 改行コードを格納
             $progress[1] += $_int32arr_lst_read_nlc.Count
-            _func_slice_lex_buf ($_int_lex_buf_l1_lst_idx) ($endindx) ($_int32_3Darr_lex_buf[$_int_lex_buf_l1_lst_idx][$endindx].Count)
+            _func_slice_lex_buf ($_int_lex_buf_l1_lst_idx) ($endindx) ($_int32_3Darr_lex_buf[$_int_lex_buf_l1_lst_idx][$endindx].Count) | Out-Null
             . $_scrpt_blc_scrpt_blc_copy_flags
             . $_scrpt_blc_try_delimition_lister # `$delimitionListener` の実行
         }
