@@ -1,4 +1,4 @@
-$ps1_path = ".\CommentLexer.ps1"
+$ps1_path = "\..\..\CommentLexer.ps1"
 $enc_name = "utf-8"
 
 $to_lex_file = Convert-Path $Args[0]

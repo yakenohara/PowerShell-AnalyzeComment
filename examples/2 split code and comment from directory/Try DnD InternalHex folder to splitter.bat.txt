@@ -1,0 +1,1 @@
+Try DnD `InternalHex` folder to `splitter.bat`
